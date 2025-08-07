@@ -17,7 +17,39 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
         core->resize(width, height);
     }
 }
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    static bool firstMouse = true;
+    static float lastX = 400, lastY = 300; // початкові координати (центр вікна)
 
+    if (firstMouse) {
+        lastX = (float)xpos;
+        lastY = (float)ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = (float)(xpos - lastX);
+    float yoffset = (float)(lastY - ypos); // інвертуємо y
+
+    lastX = (float)xpos;
+    lastY = (float)ypos;
+
+    // Отримуємо вказівник на Core
+    Core* core = reinterpret_cast<Core*>(glfwGetWindowUserPointer(window));
+    if (core) {
+        core->getCamera().rotate(xoffset, yoffset);
+    }
+}
+
+void processInput(GLFWwindow* window, Core& core, float deltaTime) {
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        core.getCamera().moveForward(deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        core.getCamera().moveBackward(deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        core.getCamera().moveLeft(deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        core.getCamera().moveRight(deltaTime);
+}
 int main() {
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
@@ -35,6 +67,8 @@ int main() {
         return -1;
     }
     glfwMakeContextCurrent(window);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD\n";
@@ -60,19 +94,20 @@ int main() {
         std::chrono::duration<float> delta = now - lastTick;
 
         if (delta >= tickInterval) {
+
+            processInput(window, core, delta.count());
             core.tick();
             lastTick = now;
         }
-
-        core.update(delta.count());
         core.render();
 
         glfwSwapBuffers(window);
-        glfwPollEvents();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        glfwPollEvents(); 
     }
 
     glfwTerminate();
     return 0;
+
+
+
 }
