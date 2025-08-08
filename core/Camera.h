@@ -35,6 +35,6 @@ private:
     float yaw = -90.0f;   // дивимось вперед уздовж -Z
     float pitch = 0.0f;
 
-    float movementSpeed = 1.0f;
+    float movementSpeed = 5.0f;
     float mouseSensitivity = 0.1f;
 };

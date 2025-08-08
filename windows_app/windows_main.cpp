@@ -85,25 +85,33 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     auto lastTick = std::chrono::high_resolution_clock::now();
-    const int tickRate = 20;
-    const std::chrono::milliseconds tickInterval(1000 / tickRate);
+    auto lastFrame = std::chrono::high_resolution_clock::now();
 
+    const int tickRate = 20;
+    const int fpsRate = 60;
+
+    const std::chrono::milliseconds tickInterval(1000 / tickRate);
+    const std::chrono::milliseconds frameInterval(1000 / fpsRate);
 
     while (!glfwWindowShouldClose(window)) {
         auto now = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> delta = now - lastTick;
 
-        if (delta >= tickInterval) {
+        if (now - lastFrame >= frameInterval) {
+            std::chrono::duration<float> deltaTime = now - lastFrame;
+            processInput(window, core, deltaTime.count());
+            core.render();
+            glfwSwapBuffers(window);
+            lastFrame = now;
+        }
 
-            processInput(window, core, delta.count());
+        if (now - lastTick >= tickInterval) {
             core.tick();
             lastTick = now;
         }
-        core.render();
 
-        glfwSwapBuffers(window);
-        glfwPollEvents(); 
+        glfwPollEvents();
     }
+
 
     glfwTerminate();
     return 0;

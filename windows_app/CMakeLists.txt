@@ -20,6 +20,13 @@ add_executable(CubeCraft
         ../core/Logger.h
         ../core/Camera.cpp
         ../core/Camera.h
+        ../core/MeshBlock.cpp
+        ../core/MeshBlock.h
+        ../core/world/World.cpp
+        ../core/world/World.h
+        ../core/world/WorldRenderer.cpp
+        ../core/world/WorldRenderer.h
+        ../core/block/Block.h
 )
 target_include_directories(CubeCraft PUBLIC
         ../core
