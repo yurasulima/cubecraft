@@ -15,16 +15,6 @@ MeshBlock::MeshBlock(const std::vector<float>& vertices,
     setupMesh();
 }
 
-// Старий конструктор для зворотної сумісності
-MeshBlock::MeshBlock(const std::vector<float>& vertices,
-                     const std::vector<unsigned int>& indices,
-                     const std::vector<float>& texCoords,
-                     unsigned int textureId)
-    : vertices(vertices), indices(indices), texCoords(texCoords),
-      textureId(textureId), textureIndex(0), useTextureArray(false) {
-
-    setupMesh();
-}
 
 MeshBlock::~MeshBlock() {
     cleanup();

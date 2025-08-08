@@ -27,6 +27,8 @@ add_executable(CubeCraft
         ../core/world/WorldRenderer.cpp
         ../core/world/WorldRenderer.h
         ../core/block/Block.h
+        ../core/TextureIndex.h
+        ../core/RaycastHit.h
 )
 target_include_directories(CubeCraft PUBLIC
         ../core

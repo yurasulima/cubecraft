@@ -14,13 +14,16 @@ void World::generateRandom(int width, int depth, int maxHeight) {
 
     for (int x = 0; x < width; ++x) {
         for (int z = 0; z < depth; ++z) {
-            int height = rand() % (maxHeight + 1);
-            for (int y = 0; y <= height; ++y) {
-                Renderer::TextureIndex texIndex;
-                if (y == height) {
-                    texIndex = Renderer::TEXTURE_GRASS;
-                } else {
-                    texIndex = (rand() % 2 == 0) ? Renderer::TEXTURE_DIRT : Renderer::TEXTURE_STONE;
+            for (int y = 0; y <= maxHeight; ++y) {
+                TextureIndex texIndex;
+                if (y == 0) {
+                    texIndex = TextureIndex::TEXTURE_BEDROCK;
+                }
+                else if (y > 0 && y < 5) {
+                    texIndex = TextureIndex::TEXTURE_DIRT;
+                }
+                else {
+                    texIndex = TextureIndex::TEXTURE_LEAVES;
                 }
                 blocks.push_back({ glm::vec3(x, y, z), texIndex });
             }

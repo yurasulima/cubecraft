@@ -10,7 +10,14 @@
 struct Block {
 
     glm::vec3 position;
-    Renderer::TextureIndex texture;
+    TextureIndex texture;
     bool transparent = false;
     bool solid = true;
+
+    bool isAir();
 };
+
+inline bool Block::isAir() {
+    return texture == TextureIndex::TEXTURE_BEDROCK;
+
+}

@@ -10,6 +10,10 @@ Camera::Camera() {
     updateCameraVectors();
 }
 
+
+
+
+
 glm::mat4 Camera::getModelMatrix() const {
     return glm::mat4(1.0f); // залишимо без обертання для камери
 }
