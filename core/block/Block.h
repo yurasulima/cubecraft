@@ -4,20 +4,18 @@
 #pragma once
 #include <string>
 #include <glm/vec3.hpp>
-
+#include "TextureIndex.h"
 #include "Renderer.h"
 
-struct Block {
+struct  Block {
+    std::string type_name;
 
     glm::vec3 position;
-    TextureIndex texture;
+    int texture;
     bool transparent = false;
     bool solid = true;
 
-    bool isAir();
+    bool isAir() {
+        return texture == TEXTURE_BEDROCK;
+    }
 };
-
-inline bool Block::isAir() {
-    return texture == TextureIndex::TEXTURE_BEDROCK;
-
-}

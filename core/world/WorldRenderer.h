@@ -2,15 +2,24 @@
 // Created by mBlueberry on 08.08.2025.
 //
 
-// WorldRenderer.h
 #pragma once
 
 #include <glm/glm.hpp>
+
 #include "World.h"
+#include "ChunkMesh.h"
+#include "TextureIndex.h"
+
 
 
 class WorldRenderer {
 public:
+
+
+    void updateMeshes();
+
+
+
     bool init();
 
     void addCubeToMesh(std::vector<float> &vertices, std::vector<unsigned int> &indices, unsigned int indexOffset,
@@ -21,10 +30,16 @@ public:
     void render(const glm::mat4& view, const glm::mat4& projection);
     void cleanup();
 
+    void setWorld(const World *world) {
+        this->world = world;
+    };
+
 private:
     unsigned int VAO = 0, VBO = 0, EBO = 0;
     unsigned int shaderProgram = 0;
 
+    const World *world = nullptr;
+    std::unordered_map<ChunkPos, ChunkMesh> chunkMeshes;
     static unsigned int textureArrayId;
     static int textureArraySize;
     int terrainIndexCount = 0;

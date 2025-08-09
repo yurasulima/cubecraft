@@ -5,7 +5,8 @@
 #include <memory>
 
 #include "MeshBlock.h"
-#include "TextureIndex.h"
+#include "world/World.h"
+#include "world/WorldRenderer.h"
 
 class Renderer {
 public:
@@ -26,7 +27,7 @@ private:
     // Блоки для рендерингу
     std::vector<std::unique_ptr<MeshBlock>> blocks;
 
-
-
+    World world;
+    WorldRenderer world_renderer;
 
 };

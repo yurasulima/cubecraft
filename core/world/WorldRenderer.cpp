@@ -10,11 +10,22 @@
 #include <string>
 #include <glad/glad.h>
 
+#include "TextureIndex.h"
 #include "World.h"
+#include "Chunk.h"
 
 
 unsigned int WorldRenderer::textureArrayId = 0;
 int WorldRenderer::textureArraySize = 0;
+
+
+void WorldRenderer::updateMeshes() {
+    for (const auto& [pos, chunk] : world->chunks) {
+        ChunkMesh& mesh = chunkMeshes[pos];
+        mesh.buildMeshFromBlocks(chunk);
+        mesh.uploadToGPU();
+    }
+}
 
 
 bool WorldRenderer::init() {
@@ -31,7 +42,7 @@ bool WorldRenderer::init() {
 void WorldRenderer::addCubeToMesh(std::vector<float> &vertices, std::vector<unsigned int> &indices,
                                   unsigned int indexOffset, float x, float y, float z, TextureIndex texIndex) {
     // Вершини куба (24 вершини для 6 граней)
-    std::vector<glm::vec3> cubePositions = {
+    std::vector<glm::vec3> cubePositions ={
         // FRONT (4 вершини)
         {x - 0.5f, y - 0.5f, z + 0.5f},
         {x + 0.5f, y - 0.5f, z + 0.5f},
@@ -106,18 +117,16 @@ void WorldRenderer::addCubeToMesh(std::vector<float> &vertices, std::vector<unsi
 
 
 void WorldRenderer::setupBuffers(const World &world) {
-    // Формуємо вершини та індекси для всіх блоків з World
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
     unsigned int indexOffset = 0;
 
-    for (const auto &block: world.getBlocks()) {
-        // Твоя функція addCubeToMesh (з Renderer) — можна винести сюди або переписати
-        addCubeToMesh(vertices, indices, indexOffset,
-                      block.position.x, block.position.y, block.position.z,
-                      block.texture);
-        indexOffset += 24;
-    }
+    // for (const auto &block: world.getBlocks()) {
+    //     addCubeToMesh(vertices, indices, indexOffset,
+    //                   block.position.x, block.position.y, block.position.z,
+    //                   block.texture);
+    //     indexOffset += 24;
+    // }
 
     terrainIndexCount = static_cast<int>(indices.size());
 
@@ -151,6 +160,8 @@ void WorldRenderer::setupBuffers(const World &world) {
     glBindVertexArray(0);
 }
 
+
+
 void WorldRenderer::render(const glm::mat4 &view, const glm::mat4 &projection) {
     glUseProgram(shaderProgram);
 
@@ -172,6 +183,10 @@ void WorldRenderer::render(const glm::mat4 &view, const glm::mat4 &projection) {
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, terrainIndexCount, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
+    for (auto& [pos, mesh] : chunkMeshes) {
+        mesh.render();
+    }
 }
 
 void WorldRenderer::cleanup() {

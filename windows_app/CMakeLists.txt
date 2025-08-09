@@ -29,6 +29,14 @@ add_executable(CubeCraft
         ../core/block/Block.h
         ../core/TextureIndex.h
         ../core/RaycastHit.h
+        ../core/world/Chunk.cpp
+        ../core/world/Chunk.h
+        ../core/world/ChunkMesh.cpp
+        ../core/world/ChunkMesh.h
+        ../core/block/BedrockBlock.cpp
+        ../core/block/BedrockBlock.h
+        ../core/block/AirBlock.cpp
+        ../core/block/AirBlock.h
 )
 target_include_directories(CubeCraft PUBLIC
         ../core

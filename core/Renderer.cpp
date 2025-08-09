@@ -16,12 +16,15 @@ Renderer::Renderer() = default;
 Renderer::~Renderer() {
 }
 
-
+World world;
 WorldRenderer world_renderer;
 bool Renderer::init() {
 
-    World world;
-    world.generateRandom(16, 16, 5);
+
+    world.generateTestWorld();
+    world_renderer.setWorld(&world);
+    world_renderer.updateMeshes();
+
 
     if (!world_renderer.init()) {
         std::cerr << "Failed to initialize renderer\n";

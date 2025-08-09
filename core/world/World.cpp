@@ -8,29 +8,42 @@
 
 #include "Renderer.h"
 
-void World::generateRandom(int width, int depth, int maxHeight) {
-    srand((unsigned int)time(nullptr));
-    blocks.clear();
+#include "World.h"
 
-    for (int x = 0; x < width; ++x) {
-        for (int z = 0; z < depth; ++z) {
-            for (int y = 0; y <= maxHeight; ++y) {
-                TextureIndex texIndex;
-                if (y == 0) {
-                    texIndex = TextureIndex::TEXTURE_BEDROCK;
-                }
-                else if (y > 0 && y < 5) {
-                    texIndex = TextureIndex::TEXTURE_DIRT;
-                }
-                else {
-                    texIndex = TextureIndex::TEXTURE_LEAVES;
-                }
-                blocks.push_back({ glm::vec3(x, y, z), texIndex });
+BlockType World::getBlock(int x, int y, int z) const {
+    auto [lx, ly, lz] = toLocalPos(x, y, z);
+    ChunkPos cp = toChunkPos(x, z);
+
+    auto it = chunks.find(cp);
+    if (it == chunks.end()) return BlockType::Air;
+    return it->second.getBlock(lx, ly, lz);
+}
+
+void World::setBlock(int x, int y, int z, BlockType type) {
+    auto [lx, ly, lz] = toLocalPos(x, y, z);
+    ChunkPos cp = toChunkPos(x, z);
+    chunks[cp].setBlock(lx, ly, lz, type);
+}
+
+ChunkPos World::toChunkPos(int x, int z) {
+    int cx = x >= 0 ? x / CHUNK_SIZE_X : (x - CHUNK_SIZE_X + 1) / CHUNK_SIZE_X;
+    int cz = z >= 0 ? z / CHUNK_SIZE_Z : (z - CHUNK_SIZE_Z + 1) / CHUNK_SIZE_Z;
+    return { cx, cz };
+}
+
+std::tuple<int, int, int> World::toLocalPos(int x, int y, int z) {
+    int lx = ((x % CHUNK_SIZE_X) + CHUNK_SIZE_X) % CHUNK_SIZE_X;
+    int lz = ((z % CHUNK_SIZE_Z) + CHUNK_SIZE_Z) % CHUNK_SIZE_Z;
+    return { lx, y, lz };
+}
+
+void World::generateTestWorld() {
+    for (int x = -32; x < 32; ++x) {
+        for (int z = -32; z < 32; ++z) {
+            setBlock(x, 0, z, BlockType::Bedrock);
+            for (int y = 1; y < 4; ++y) {
+                setBlock(x, y, z, BlockType::Air);
             }
         }
     }
-}
-
-const std::vector<Block>& World::getBlocks() const {
-    return blocks;
 }

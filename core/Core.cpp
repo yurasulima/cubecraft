@@ -2,12 +2,19 @@
 #include "Core.h"
 
 #include "Logger.h"
+#include "block/AirBlock.h"
+#include "block/BedrockBlock.h"
 
 Core::Core() = default;
 Core::~Core() = default;
 
 bool Core::init() {
-    return renderer.init();
+    auto inited = renderer.init();
+
+
+
+
+    return inited;
 }
 
 void Core::resize(int w, int h) {
