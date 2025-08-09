@@ -33,7 +33,14 @@ public:
     void setWorld(const World *world) {
         this->world = world;
     };
+    // Напрямок світла (нормалізований вектор)
+    glm::vec3 lightDir = glm::normalize(glm::vec3(-1.0f, -1.0f, -0.3f));
 
+    // Колір світла
+    glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 0.9f);
+
+    // Колір амбієнтного світла
+    glm::vec3 ambientColor = glm::vec3(0.3f, 0.3f, 0.3f);
 private:
     unsigned int VAO = 0, VBO = 0, EBO = 0;
     unsigned int shaderProgram = 0;

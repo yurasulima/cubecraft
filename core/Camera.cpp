@@ -3,6 +3,8 @@
 //
 // Camera.cpp
 #include "Camera.h"
+
+#include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/constants.hpp>
 
@@ -27,19 +29,29 @@ glm::mat4 Camera::getProjectionMatrix(int width, int height) const {
 }
 
 void Camera::moveForward(float delta) {
-    position += front * movementSpeed * delta;
+    glm::vec3 oldPos = position;
+    glm::vec3 movement = front * movementSpeed * delta;
+    position += movement;
+
 }
 
 void Camera::moveBackward(float delta) {
-    position -= front * movementSpeed * delta;
+    glm::vec3 oldPos = position;
+    glm::vec3 movement = front * movementSpeed * delta;
+    position -= movement;
 }
 
 void Camera::moveLeft(float delta) {
-    position -= right * movementSpeed * delta;
+    glm::vec3 oldPos = position;
+    glm::vec3 movement = right * movementSpeed * delta;
+    position -= movement;
 }
 
 void Camera::moveRight(float delta) {
-    position += right * movementSpeed * delta;
+    glm::vec3 oldPos = position;
+    glm::vec3 movement = right * movementSpeed * delta;
+    position += movement;
+
 }
 
 void Camera::rotate(float yawOffset, float pitchOffset) {

@@ -80,6 +80,16 @@ void WorldRenderer::addCubeToMesh(std::vector<float> &vertices, std::vector<unsi
         {x - 0.5f, y - 0.5f, z + 0.5f}
     };
 
+    std::vector<glm::vec3> normals = {
+        { 0,  0,  1}, { 0,  0,  1}, { 0,  0,  1}, { 0,  0,  1}, // FRONT
+        { 0,  0, -1}, { 0,  0, -1}, { 0,  0, -1}, { 0,  0, -1}, // BACK
+        {-1,  0,  0}, {-1,  0,  0}, {-1,  0,  0}, {-1,  0,  0}, // LEFT
+        { 1,  0,  0}, { 1,  0,  0}, { 1,  0,  0}, { 1,  0,  0}, // RIGHT
+        { 0,  1,  0}, { 0,  1,  0}, { 0,  1,  0}, { 0,  1,  0}, // TOP
+        { 0, -1,  0}, { 0, -1,  0}, { 0, -1,  0}, { 0, -1,  0}  // BOTTOM
+    };
+
+
     // Текстурні координати для кожної грані
     std::vector<glm::vec2> texCoords = {
         {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, // FRONT
@@ -153,6 +163,10 @@ void WorldRenderer::setupBuffers(const World &world) {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    // Нормалі (3 float)
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(5 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
     // Texture index (1 float)
     glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (5 * sizeof(float)));
     glEnableVertexAttribArray(2);
@@ -168,12 +182,19 @@ void WorldRenderer::render(const glm::mat4 &view, const glm::mat4 &projection) {
     GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
     GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
     GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
+    GLint lightDirLoc = glGetUniformLocation(shaderProgram, "lightDir");
+    GLint lightColorLoc = glGetUniformLocation(shaderProgram, "lightColor");
+    GLint ambientColorLoc = glGetUniformLocation(shaderProgram, "ambientColor");
 
     glm::mat4 model = glm::mat4(1.0f);
 
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, &projection[0][0]);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
+
+    glUniform3fv(lightDirLoc, 1, &lightDir[0]);
+    glUniform3fv(lightColorLoc, 1, &lightColor[0]);
+    glUniform3fv(ambientColorLoc, 1, &ambientColor[0]);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrayId);
@@ -202,48 +223,60 @@ void WorldRenderer::cleanup() {
         glDeleteTextures(1, &textureArrayId);
 }
 
-
-
 bool WorldRenderer::createShaderProgram() {
-    // Новий vertex shader з підтримкою texture array
     const char *vertexShaderSource = R"(
-    #version 330 core
-    layout (location = 0) in vec3 aPos;
-    layout (location = 1) in vec2 aTexCoord;
-    layout (location = 2) in float aTexIndex;
+        #version 330 core
+        layout (location = 0) in vec3 aPos;
+        layout (location = 1) in vec2 aTexCoord;
+        layout (location = 2) in vec3 aNormal;
+        layout (location = 3) in float aTexIndex;
 
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
 
-    out vec2 TexCoord;
-    out float TexIndex;
+        out vec2 TexCoord;
+        out vec3 Normal;
+        out float TexIndex;
 
-    void main() {
-        gl_Position = projection * view * model * vec4(aPos, 1.0);
-        TexCoord = aTexCoord;
-        TexIndex = aTexIndex;
-    }
+        void main() {
+            gl_Position = projection * view * model * vec4(aPos, 1.0);
+            TexCoord = aTexCoord;
+            Normal = mat3(transpose(inverse(model))) * aNormal;
+            TexIndex = aTexIndex;
+        }
     )";
 
     const char *fragmentShaderSource = R"(
-    #version 330 core
-    in vec2 TexCoord;
-    in float TexIndex;
+        #version 330 core
+        in vec2 TexCoord;
+        in vec3 Normal;
+        in float TexIndex;
 
-    uniform sampler2DArray textureArray;
+        uniform sampler2DArray textureArray;
 
-    out vec4 FragColor;
+        uniform vec3 lightDir;
+        uniform vec3 lightColor;
+        uniform vec3 ambientColor;
 
-    void main() {
-        FragColor = texture(textureArray, vec3(TexCoord, TexIndex));
-    }
+        out vec4 FragColor;
+
+        void main() {
+            vec3 norm = normalize(Normal);
+            vec3 light = normalize(-lightDir);
+            float diff = max(dot(norm, light), 0.0);
+            vec3 ambient = ambientColor;
+            vec3 diffuse = diff * lightColor;
+            vec3 lighting = ambient + diffuse;
+
+            vec4 texColor = texture(textureArray, vec3(TexCoord, TexIndex));
+            FragColor = vec4(lighting, 1.0) * texColor;
+        }
     )";
 
     GLint success;
     GLchar infoLog[512];
 
-    // Компіляція vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
     glCompileShader(vertexShader);
@@ -288,11 +321,12 @@ bool WorldRenderer::createShaderProgram() {
     return true;
 }
 
+
 void WorldRenderer::loadTextureArray() {
     // Список шляхів до текстур
     std::vector<std::string> texturePaths = {
-        "D:/coding/CubeCraft/windows_app/textures/andesite.png", // 0 - TEXTURE_GRASS
-        "D:/coding/CubeCraft/windows_app/textures/dirt.png", // 1 - TEXTURE_DIRT
+        "D:/coding/CubeCraft/windows_app/textures/dirt.png", // 0 - TEXTURE_GRASS
+        "D:/coding/CubeCraft/windows_app/textures/andesite.png", // 1 - TEXTURE_DIRT
         "D:/coding/CubeCraft/windows_app/textures/stone.png", // 2 - TEXTURE_STONE
         "D:/coding/CubeCraft/windows_app/textures/wood.png", // 3 - TEXTURE_WOOD
         "D:/coding/CubeCraft/windows_app/textures/mud.png", // 4 - TEXTURE_LEAVES
@@ -338,8 +372,18 @@ void WorldRenderer::loadTextureArray() {
     // Налаштування параметрів текстури
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+
+    // Міпмапи з плавним переходом
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    // Лінійне фільтрування при збільшенні
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    // Анізотропна фільтрація (максимально можлива)
+    GLfloat aniso = 0.0f;
+    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &aniso);
+    glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY, aniso);
+
+
 
     // Генеруємо мip-рівні
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);

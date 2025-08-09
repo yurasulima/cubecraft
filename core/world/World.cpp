@@ -38,8 +38,8 @@ std::tuple<int, int, int> World::toLocalPos(int x, int y, int z) {
 }
 
 void World::generateTestWorld() {
-    for (int x = -32; x < 32; ++x) {
-        for (int z = -32; z < 32; ++z) {
+    for (int x = -64; x < 64; ++x) {
+        for (int z = -64; z < 64; ++z) {
             setBlock(x, 0, z, BlockType::Bedrock);
             for (int y = 1; y < 4; ++y) {
                 setBlock(x, y, z, BlockType::Air);

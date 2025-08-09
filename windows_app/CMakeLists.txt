@@ -28,7 +28,6 @@ add_executable(CubeCraft
         ../core/world/WorldRenderer.h
         ../core/block/Block.h
         ../core/TextureIndex.h
-        ../core/RaycastHit.h
         ../core/world/Chunk.cpp
         ../core/world/Chunk.h
         ../core/world/ChunkMesh.cpp
@@ -37,6 +36,17 @@ add_executable(CubeCraft
         ../core/block/BedrockBlock.h
         ../core/block/AirBlock.cpp
         ../core/block/AirBlock.h
+        ../core/Raycast.cpp
+        ../core/Raycast.h
+        ../core/CrosshairRenderer.cpp
+        ../core/CrosshairRenderer.h
+        ../core/BlockHighlight.cpp
+        ../core/BlockHighlight.h
+        ../core/RayRenderer.cpp
+        ../core/RayRenderer.h
+        ../core/DebugRayRenderer.h
+        ../core/ui/UIManager.cpp
+        ../core/ui/UIManager.h
 )
 target_include_directories(CubeCraft PUBLIC
         ../core

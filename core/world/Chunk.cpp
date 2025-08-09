@@ -10,17 +10,21 @@
 Chunk::Chunk() {
     blocks.fill(BlockType::Air);
 }
-
 BlockType Chunk::getBlock(int x, int y, int z) const {
-    assert(x >= 0 && x < CHUNK_SIZE_X);
-    assert(y >= 0 && y < CHUNK_SIZE_Y);
-    assert(z >= 0 && z < CHUNK_SIZE_Z);
+    if (x < 0 || x >= CHUNK_SIZE_X ||
+        y < 0 || y >= CHUNK_SIZE_Y ||
+        z < 0 || z >= CHUNK_SIZE_Z) {
+        // Якщо координати поза межами — повертаємо Air (або інший дефолтний тип)
+        return BlockType::Air;
+        }
     return blocks[index(x, y, z)];
 }
 
 void Chunk::setBlock(int x, int y, int z, BlockType type) {
-    assert(x >= 0 && x < CHUNK_SIZE_X);
-    assert(y >= 0 && y < CHUNK_SIZE_Y);
-    assert(z >= 0 && z < CHUNK_SIZE_Z);
+    if (x < 0 || x >= CHUNK_SIZE_X ||
+        y < 0 || y >= CHUNK_SIZE_Y ||
+        z < 0 || z >= CHUNK_SIZE_Z) {\
+        return;
+        }
     blocks[index(x, y, z)] = type;
 }
