@@ -83,17 +83,14 @@ void processInput(GLFWwindow* window, Core& core, float deltaTime) {
     if (g_isPaused) {
         return;
     }
+    bool w = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
+    bool s = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
+    bool a = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
+    bool d = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
+    bool space = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+    bool shift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
 
-    // Рух камери
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        core.getCamera().moveForward(deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        core.getCamera().moveBackward(deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        core.getCamera().moveLeft(deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        core.getCamera().moveRight(deltaTime);
-
+    core.getCamera().processKeyboard(deltaTime, w, s, a, d, space, shift);
     core.updateRaycast();
 
     // Обробка кліків миші для взаємодії з блоками

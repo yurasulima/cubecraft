@@ -50,19 +50,18 @@ void Renderer::handleMouseClick(int button, int action, int mods, double xpos, d
 bool Renderer::init() {
 
 
-    Core::getInstance().getWorld().generateTestWorld();
+
+    Core::getInstance().getWorld().generateContinentalWorld();
     Core::getInstance().getWorldRenderer().setWorld(&Core::getInstance().getWorld());
     Core::getInstance().getWorldRenderer().updateMeshes();
 
-    Core::getInstance().getBlockHighlight().setColor(glm::vec3(1.0f, 1.0f, 1.0f)); // Білий прицілу
+    Core::getInstance().getBlockHighlight().setColor(glm::vec3(1.0f, 1.0f, 1.0f));
     Core::getInstance().getCrosshair().setSize(15.0f);
     Core::getInstance().getCrosshair().setThickness(2.0f);
 
-    Core::getInstance().getBlockHighlight().setColor(glm::vec3(0.0f, 0.0f, 0.0f));
-    Core::getInstance().getBlockHighlight().setLineWidth(3.0f);
 
-    Core::getInstance().getRayRenderer().setRayColor(glm::vec3(1.0f, 0.0f, 0.0f));        // Червоний промінь
-    Core::getInstance().getRayRenderer().setHitPointColor(glm::vec3(1.0f, 1.0f, 0.0f));   // Жовта точка попадання
+    Core::getInstance().getRayRenderer().setRayColor(glm::vec3(1.0f, 0.0f, 0.0f));
+    Core::getInstance().getRayRenderer().setHitPointColor(glm::vec3(1.0f, 1.0f, 0.0f));
     Core::getInstance().getRayRenderer().setLineWidth(3.0f);
     Core::getInstance().getRayRenderer().setShowHitPoint(true);
     Core::getInstance().getRayRenderer().setShowFullRay(true);

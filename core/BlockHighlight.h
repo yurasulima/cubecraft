@@ -27,8 +27,8 @@ private:
     GLuint VAO, VBO, EBO;
     GLuint shaderProgram;
     
-    glm::vec3 highlightColor = glm::vec3(0.0f, 0.0f, 0.0f); // Чорний контур
-    float lineWidth = 2.0f;
+    glm::vec3 highlightColor = glm::vec3(1.0f, 1.0f, 1.0f); // Чорний контур
+    float lineWidth = 1.0f;
     
     bool initialized = false;
 };

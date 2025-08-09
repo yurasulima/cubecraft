@@ -1,45 +1,66 @@
 //
 // Created by mBlueberry on 07.08.2025.
 //
+// Camera.h
 #pragma once
+
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 class Camera {
 public:
+    // Конструктор
     Camera();
 
-    // Матриці трансформації
+    // Методи для отримання матриць
     glm::mat4 getModelMatrix() const;
     glm::mat4 getViewMatrix() const;
     glm::mat4 getProjectionMatrix(int width, int height) const;
 
-    // Управління переміщенням
+    // Методи руху
     void moveForward(float delta);
     void moveBackward(float delta);
     void moveLeft(float delta);
     void moveRight(float delta);
+    void moveUp(float delta);      // Рух вгору по Y-осі
+    void moveDown(float delta);    // Рух вниз по Y-осі
 
-    // Управління поворотом
+    // Поворот камери
     void rotate(float yawOffset, float pitchOffset);
 
-    // Отримати напрямок погляду для raycast
+    // Зручний метод для обробки всього керування
+    void processKeyboard(float deltaTime, bool moveForward, bool moveBackward,
+                        bool moveLeft, bool moveRight, bool moveUp, bool moveDown);
+
+    // Геттери/сеттери
+    glm::vec3 getPosition() const { return position; }
+    void setPosition(const glm::vec3& pos) { position = pos; }
+
+    float getMovementSpeed() const { return movementSpeed; }
+    void setMovementSpeed(float speed) { movementSpeed = speed; }
+
+    float getMouseSensitivity() const { return mouseSensitivity; }
+    void setMouseSensitivity(float sensitivity) { mouseSensitivity = sensitivity; }
+
     glm::vec3 getFront() const { return front; }
     glm::vec3 getPosition() { return position; }
-
 private:
-    void updateCameraVectors();
+    // Позиція камери
+    glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f);
 
-    // Позиція і орієнтація
-    glm::vec3 position = glm::vec3(0.5f, 0.5f, 15.0f);
+    // Вектори напрямків камери
     glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 right;
 
     // Кути Ейлера
-    float yaw = -90.0f;
-    float pitch = 0.0f;
+    float yaw = -90.0f;   // Поворот навколо Y-осі
+    float pitch = 0.0f;   // Поворот навколо X-осі
 
-    // Налаштування
+    // Налаштування камери
     float movementSpeed = 5.0f;
     float mouseSensitivity = 0.1f;
+
+    // Приватні методи
+    void updateCameraVectors();
 };

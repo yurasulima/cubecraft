@@ -105,28 +105,21 @@ void BlockHighlight::render(const glm::mat4& view, const glm::mat4& projection, 
     if (!initialized || !hit.has_value()) return;
 
     glUseProgram(shaderProgram);
-
-    // Налаштовуємо OpenGL для рендерингу ліній
     glLineWidth(lineWidth);
     glEnable(GL_LINE_SMOOTH);
-    glDisable(GL_DEPTH_TEST); // Щоб виділення було завжди видно
-
-    // Створюємо model матрицю для позиції блоку
+    glEnable(GL_DEPTH_TEST);
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(hit->blockPos) + glm::vec3(0.5f)); // +0.5f щоб центрувати
+    model = glm::translate(model, glm::vec3(hit->blockPos) + glm::vec3(0.5f));
 
-    // Передаємо матриці до шейдера
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, &model[0][0]);
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, &view[0][0]);
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, &projection[0][0]);
     glUniform3fv(glGetUniformLocation(shaderProgram, "color"), 1, &highlightColor[0]);
 
-    // Рендеримо wireframe куб
     glBindVertexArray(VAO);
     glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
-    // Відновлюємо стан OpenGL
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_LINE_SMOOTH);
     glLineWidth(1.0f);
