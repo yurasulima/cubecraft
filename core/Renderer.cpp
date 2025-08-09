@@ -26,13 +26,10 @@ Renderer::~Renderer() {
 
 
 void Renderer::update() {
-    // Обчислюємо delta time
     auto currentTime = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - lastFrameTime);
-    deltaTime = duration.count() / 1000000.0f; // Конвертуємо мікросекунди у секунди
+    deltaTime = duration.count() / 1000000.0f;
     lastFrameTime = currentTime;
-
-    // Оновлюємо UI Manager
     uiManager.update(deltaTime);
 }
 
@@ -51,7 +48,7 @@ bool Renderer::init() {
 
 
 
-    Core::getInstance().getWorld().generateContinentalWorld();
+    Core::getInstance().getWorld().generateFlatWorld();
     Core::getInstance().getWorldRenderer().setWorld(&Core::getInstance().getWorld());
     Core::getInstance().getWorldRenderer().updateMeshes();
 
@@ -72,7 +69,7 @@ bool Renderer::init() {
         std::cerr << "Failed to initialize renderer\n";
         return false;
     }
-    Core::getInstance().getWorldRenderer().setupBuffers(Core::getInstance().getWorld());
+    // Core::getInstance().getWorldRenderer().setupBuffers(Core::getInstance().getWorld());
 
 
 

@@ -58,7 +58,7 @@ private:
     float pitch = 0.0f;   // Поворот навколо X-осі
 
     // Налаштування камери
-    float movementSpeed = 5.0f;
+    float movementSpeed = 15.0f;
     float mouseSensitivity = 0.1f;
 
     // Приватні методи

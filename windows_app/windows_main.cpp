@@ -108,7 +108,7 @@ void processInput(GLFWwindow* window, Core& core, float deltaTime) {
                   << core.getRayCast()->blockPos.y << ", "
                   << core.getRayCast()->blockPos.z << ")\n";
 
-        Core::getInstance().getWorldRenderer().setupBuffers(Core::getInstance().getWorld());
+        // Core::getInstance().getWorldRenderer().setupBuffers(Core::getInstance().getWorld());
         Core::getInstance().getWorldRenderer().updateMeshes();
     }
 
@@ -120,7 +120,7 @@ void processInput(GLFWwindow* window, Core& core, float deltaTime) {
                   << core.getRayCast()->facePos.y << ", "
                   << core.getRayCast()->facePos.z << ")\n";
 
-        Core::getInstance().getWorldRenderer().setupBuffers(Core::getInstance().getWorld());
+        // Core::getInstance().getWorldRenderer().setupBuffers(Core::getInstance().getWorld());
         Core::getInstance().getWorldRenderer().updateMeshes();
     }
 

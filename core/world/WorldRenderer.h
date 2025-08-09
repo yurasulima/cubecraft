@@ -26,7 +26,7 @@ public:
                        float x,
                        float y, float z, TextureIndex texIndex);
 
-    void setupBuffers(const World& world);
+    // void setupBuffers(const World& world);
     void render(const glm::mat4& view, const glm::mat4& projection);
     void cleanup();
 
