@@ -79,11 +79,15 @@ float ChunkMesh::getTextureIndex(BlockType type) {
     }
 }
 
-void ChunkMesh::buildMeshFromBlocks(const Chunk& chunk) {
+void ChunkMesh::buildMeshFromBlocks(const Chunk& chunk, const World& world, const ChunkPos& chunkPos) {
     vertices.clear();
 
     int totalBlocks = 0;
     int visibleFaces = 0;
+
+    // Вычисляем мировые координаты начала чанка
+    int chunkWorldX = chunkPos.x * CHUNK_SIZE_X;
+    int chunkWorldZ = chunkPos.z * CHUNK_SIZE_Z;
 
     for (int x = 0; x < CHUNK_SIZE_X; ++x) {
         for (int y = 0; y < CHUNK_SIZE_Y; ++y) {
@@ -97,8 +101,13 @@ void ChunkMesh::buildMeshFromBlocks(const Chunk& chunk) {
                 float fz = (float)z;
                 float texIndex = getTextureIndex(type);
 
+                // Мировые координаты текущего блока
+                int worldX = chunkWorldX + x;
+                int worldY = y;
+                int worldZ = chunkWorldZ + z;
+
                 // Передня грань (z+1)
-                if (isAir(chunk, x, y, z + 1)) {
+                if (world.getBlock(worldX, worldY, worldZ + 1) == BlockType::Air) {
                     addQuad(
                         {fx, fy, fz + 1}, {fx + 1, fy, fz + 1}, {fx + 1, fy + 1, fz + 1}, {fx, fy + 1, fz + 1},
                         {0.0f, 0.0f, 1.0f}, texIndex
@@ -107,7 +116,7 @@ void ChunkMesh::buildMeshFromBlocks(const Chunk& chunk) {
                 }
 
                 // Задня грань (z-1)
-                if (isAir(chunk, x, y, z - 1)) {
+                if (world.getBlock(worldX, worldY, worldZ - 1) == BlockType::Air) {
                     addQuad(
                         {fx + 1, fy, fz}, {fx, fy, fz}, {fx, fy + 1, fz}, {fx + 1, fy + 1, fz},
                         {0.0f, 0.0f, -1.0f}, texIndex
@@ -116,7 +125,7 @@ void ChunkMesh::buildMeshFromBlocks(const Chunk& chunk) {
                 }
 
                 // Права грань (x+1)
-                if (isAir(chunk, x + 1, y, z)) {
+                if (world.getBlock(worldX + 1, worldY, worldZ) == BlockType::Air) {
                     addQuad(
                         {fx + 1, fy, fz}, {fx + 1, fy, fz + 1}, {fx + 1, fy + 1, fz + 1}, {fx + 1, fy + 1, fz},
                         {1.0f, 0.0f, 0.0f}, texIndex
@@ -125,7 +134,7 @@ void ChunkMesh::buildMeshFromBlocks(const Chunk& chunk) {
                 }
 
                 // Ліва грань (x-1)
-                if (isAir(chunk, x - 1, y, z)) {
+                if (world.getBlock(worldX - 1, worldY, worldZ) == BlockType::Air) {
                     addQuad(
                         {fx, fy, fz + 1}, {fx, fy, fz}, {fx, fy + 1, fz}, {fx, fy + 1, fz + 1},
                         {-1.0f, 0.0f, 0.0f}, texIndex
@@ -134,7 +143,7 @@ void ChunkMesh::buildMeshFromBlocks(const Chunk& chunk) {
                 }
 
                 // Верхня грань (y+1)
-                if (isAir(chunk, x, y + 1, z)) {
+                if (world.getBlock(worldX, worldY + 1, worldZ) == BlockType::Air) {
                     addQuad(
                         {fx, fy + 1, fz}, {fx + 1, fy + 1, fz}, {fx + 1, fy + 1, fz + 1}, {fx, fy + 1, fz + 1},
                         {0.0f, 1.0f, 0.0f}, texIndex
@@ -143,7 +152,7 @@ void ChunkMesh::buildMeshFromBlocks(const Chunk& chunk) {
                 }
 
                 // Нижня грань (y-1)
-                if (isAir(chunk, x, y - 1, z)) {
+                if (world.getBlock(worldX, worldY - 1, worldZ) == BlockType::Air) {
                     addQuad(
                         {fx, fy, fz + 1}, {fx + 1, fy, fz + 1}, {fx + 1, fy, fz}, {fx, fy, fz},
                         {0.0f, -1.0f, 0.0f}, texIndex
@@ -168,14 +177,12 @@ bool ChunkMesh::isAir(const Chunk& chunk, int x, int y, int z) const {
     return chunk.getBlock(x, y, z) == BlockType::Air;
 }
 
-// Допоміжна функція для додавання квада (4 вершини = 2 трикутники)
+
 void ChunkMesh::addQuad(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 v4, glm::vec3 normal, float texIndex) {
-    // Перший трикутник
     vertices.push_back({ v1, {0.0f, 0.0f}, normal, texIndex });
     vertices.push_back({ v2, {1.0f, 0.0f}, normal, texIndex });
     vertices.push_back({ v3, {1.0f, 1.0f}, normal, texIndex });
 
-    // Другий трикутник
     vertices.push_back({ v1, {0.0f, 0.0f}, normal, texIndex });
     vertices.push_back({ v3, {1.0f, 1.0f}, normal, texIndex });
     vertices.push_back({ v4, {0.0f, 1.0f}, normal, texIndex });

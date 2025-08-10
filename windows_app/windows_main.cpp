@@ -102,26 +102,30 @@ void processInput(GLFWwindow* window, Core& core, float deltaTime) {
 
     // Лівий клік - видалити блок
     if (leftButton && !leftButtonPressed && core.getRayCast().has_value()) {
-        core.getWorld().setBlock(core.getRayCast()->blockPos.x, core.getRayCast()->blockPos.y, core.getRayCast()->blockPos.z, BlockType::Air);
-        std::cout << "Видалено блок на позиції ("
-                  << core.getRayCast()->blockPos.x << ", "
-                  << core.getRayCast()->blockPos.y << ", "
-                  << core.getRayCast()->blockPos.z << ")\n";
+        auto blockPos = core.getRayCast()->blockPos;
 
-        // Core::getInstance().getWorldRenderer().setupBuffers(Core::getInstance().getWorld());
-        Core::getInstance().getWorldRenderer().updateMeshes();
+        core.getWorld().setBlock(blockPos.x, blockPos.y, blockPos.z, BlockType::Air);
+        std::cout << "Видалено блок на позиції ("
+                  << blockPos.x << ", " << blockPos.y << ", " << blockPos.z << ")\n";
+
+        // Оновлюємо лише потрібний чанк та його сусідів
+        Core::getInstance().getWorldRenderer().updateChunkAt(
+            core.getWorld(), blockPos.x, blockPos.z
+        );
     }
 
     // Правий клік - поставити блок
     if (rightButton && !rightButtonPressed && core.getRayCast().has_value()) {
-        core.getWorld().setBlock(core.getRayCast()->facePos.x, core.getRayCast()->facePos.y, core.getRayCast()->facePos.z, BlockType::Bedrock);
-        std::cout << "Поставлено блок на позиції ("
-                  << core.getRayCast()->facePos.x << ", "
-                  << core.getRayCast()->facePos.y << ", "
-                  << core.getRayCast()->facePos.z << ")\n";
+        auto facePos = core.getRayCast()->facePos;
 
-        // Core::getInstance().getWorldRenderer().setupBuffers(Core::getInstance().getWorld());
-        Core::getInstance().getWorldRenderer().updateMeshes();
+        core.getWorld().setBlock(facePos.x, facePos.y, facePos.z, BlockType::Bedrock);
+        std::cout << "Поставлено блок на позиції ("
+                  << facePos.x << ", " << facePos.y << ", " << facePos.z << ")\n";
+
+        // Оновлюємо лише потрібний чанк та його сусідів
+        Core::getInstance().getWorldRenderer().updateChunkAt(
+            core.getWorld(), facePos.x, facePos.z
+        );
     }
 
     leftButtonPressed = leftButton;

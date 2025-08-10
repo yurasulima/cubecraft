@@ -45,22 +45,16 @@ public:
     glm::vec3 getFront() const { return front; }
     glm::vec3 getPosition() { return position; }
 private:
-    // Позиція камери
+
     glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f);
 
-    // Вектори напрямків камери
     glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 right;
 
-    // Кути Ейлера
-    float yaw = -90.0f;   // Поворот навколо Y-осі
-    float pitch = 0.0f;   // Поворот навколо X-осі
-
-    // Налаштування камери
+    float yaw = -90.0f;
+    float pitch = 0.0f;
     float movementSpeed = 15.0f;
     float mouseSensitivity = 0.1f;
-
-    // Приватні методи
     void updateCameraVectors();
 };

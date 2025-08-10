@@ -27,9 +27,6 @@ void World::setBlock(int x, int y, int z, BlockType type) {
 ChunkPos World::toChunkPos(int x, int z) {
     int cx = x >= 0 ? x / CHUNK_SIZE_X : (x - CHUNK_SIZE_X + 1) / CHUNK_SIZE_X;
     int cz = z >= 0 ? z / CHUNK_SIZE_Z : (z - CHUNK_SIZE_Z + 1) / CHUNK_SIZE_Z;
-    //
-    // std::cout << "toChunkPos: x:" + std::to_string(cx) + " z:"  + std::to_string(cx) << std::endl;
-
     return {cx, cz};
 }
 

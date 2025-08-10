@@ -55,7 +55,8 @@ void WorldRenderer::updateMeshes() {
 
         if (blockCount > 0) {
             ChunkMesh& mesh = chunkMeshes[pos];
-            mesh.buildMeshFromBlocks(chunk);
+
+            mesh.buildMeshFromBlocks(chunk, *world, pos);
 
             if (mesh.getVertexCount() > 0) {
                 mesh.uploadToGPU();
