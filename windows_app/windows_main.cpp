@@ -9,11 +9,94 @@
 #include <thread>
 
 #include "../core/Core.h"
+static bool g_firstMouse = true;
+static double g_lastMouseX = 400.0;
+static double g_lastMouseY = 300.0;
 
-// Глобальні змінні для UI та стану гри
 UIManager* g_uiManager = nullptr;
 bool g_isPaused = false;
 bool g_showDebugWindow = false;
+
+// ВИПРАВЛЕНИЙ mouse_callback - використовуємо тільки глобальні змінні
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    // Ігноруємо рух миші якщо гра на паузі
+    if (g_isPaused) {
+        return;
+    }
+
+    // Якщо це перший рух миші або ми щойно вийшли з паузи
+    if (g_firstMouse) {
+        g_lastMouseX = xpos;
+        g_lastMouseY = ypos;
+        g_firstMouse = false;
+        return; // Ігноруємо цей кадр повністю
+    }
+
+    // Обчислюємо зміщення
+    double xoffset = xpos - g_lastMouseX;
+    double yoffset = g_lastMouseY - ypos; // Реверс Y координату
+
+    // Оновлюємо останню позицію
+    g_lastMouseX = xpos;
+    g_lastMouseY = ypos;
+
+    // Передаємо рух до гравця
+    Core* core = reinterpret_cast<Core*>(glfwGetWindowUserPointer(window));
+    if (core) {
+        core->getPlayer().processMouseMovement((float)xoffset, (float)yoffset);
+    }
+}
+
+// ВИПРАВЛЕНИЙ key_callback
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (g_uiManager) {
+        bool wasPausedBefore = g_isPaused;
+
+        g_uiManager->handleKeyPress(key, scancode, action, mods);
+        g_isPaused = g_uiManager->getIsPaused();
+        g_showDebugWindow = g_uiManager->getShowDebugWindow();
+
+        // Перевіряємо чи змінився стан паузи
+        if (wasPausedBefore != g_isPaused) {
+            if (g_isPaused) {
+                // Входимо в паузу
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            } else {
+                // Виходимо з паузи
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+                // Центруємо курсор і скидаємо стан миші
+                int width, height;
+                glfwGetWindowSize(window, &width, &height);
+                glfwSetCursorPos(window, width / 2.0, height / 2.0);
+
+                // КРИТИЧНО: скидаємо firstMouse флаг
+                g_firstMouse = true;
+
+                // Оновлюємо останні координати на центр екрану
+                g_lastMouseX = width / 2.0;
+                g_lastMouseY = height / 2.0;
+            }
+        }
+    }
+
+    if (key == GLFW_KEY_F3 && action == GLFW_PRESS && !g_isPaused) {
+        Core* core = reinterpret_cast<Core*>(glfwGetWindowUserPointer(window));
+        if (core) {
+            Player& player = core->getPlayer();
+            player.setRenderPlayer(!player.shouldRenderPlayer());
+            std::cout << (player.shouldRenderPlayer() ? "Third person view" : "First person view") << std::endl;
+        }
+    }
+
+    if (key == GLFW_KEY_F2 && action == GLFW_PRESS) {
+        Core* core = reinterpret_cast<Core*>(glfwGetWindowUserPointer(window));
+        if (core) {
+            core->toggleRenderMode();
+            std::cout << (core->getRenderMode() == RenderMode::NORMAL ? "Normal render mode" : "Collision render mode") << std::endl;
+        }
+    }
+}
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     Core* core = reinterpret_cast<Core*>(glfwGetWindowUserPointer(window));
@@ -27,49 +110,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     }
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-    // Обробляємо рух миші тільки якщо гра не на паузі
-    if (g_isPaused) {
-        return;
-    }
-
-    static bool firstMouse = true;
-    static float lastX = 400, lastY = 300; // початкові координати (центр вікна)
-
-    if (firstMouse) {
-        lastX = (float)xpos;
-        lastY = (float)ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = (float)(xpos - lastX);
-    float yoffset = (float)(lastY - ypos); // інвертуємо y
-
-    lastX = (float)xpos;
-    lastY = (float)ypos;
-
-    // Отримуємо вказівник на Core
-    Core* core = reinterpret_cast<Core*>(glfwGetWindowUserPointer(window));
-    if (core) {
-        core->getCamera().rotate(xoffset, yoffset);
-    }
-}
-
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (g_uiManager) {
-        g_uiManager->handleKeyPress(key, scancode, action, mods);
-        g_isPaused = g_uiManager->getIsPaused();
-        g_showDebugWindow = g_uiManager->getShowDebugWindow();
-
-        // Керуємо курсором залежно від стану паузи
-        if (g_isPaused) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        } else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
-    }
-}
-
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     if (g_uiManager) {
         double xpos, ypos;
@@ -78,8 +118,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     }
 }
 
+
 void processInput(GLFWwindow* window, Core& core, float deltaTime) {
-    // Обробляємо ігровий інпут тільки якщо не на паузі
     if (g_isPaused) {
         return;
     }
@@ -90,49 +130,57 @@ void processInput(GLFWwindow* window, Core& core, float deltaTime) {
     bool space = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
     bool shift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
 
-    core.getCamera().processKeyboard(deltaTime, w, s, a, d, space, shift);
+    core.getPlayer().processKeyboard(deltaTime, w, s, a, d, space, shift);
+    // core.getCamera().processKeyboard(deltaTime, w, s, a, d, space, shift);
     core.updateRaycast();
 
-    // Обробка кліків миші для взаємодії з блоками
     static bool leftButtonPressed = false;
     static bool rightButtonPressed = false;
 
     bool leftButton = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
     bool rightButton = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
-    // Лівий клік - видалити блок
+    // Руйнування блоку (лівий клік)
     if (leftButton && !leftButtonPressed && core.getRayCast().has_value()) {
         int blockX = core.getRayCast()->blockPos.x;
         int blockY = core.getRayCast()->blockPos.y;
         int blockZ = core.getRayCast()->blockPos.z;
 
         core.getWorld().setBlock(blockX, blockY, blockZ, BlockType::Air);
-        std::cout << "Видалено блок на позиції ("
-                  << blockX << ", "
-                  << blockY << ", "
-                  << blockZ << ")\n";
-
         Core::getInstance().getWorldRenderer().updateChunkAndNeighbors(blockX, blockY, blockZ);
     }
 
+    // Встановлення блоку (правий клік) - тепер використовуємо обраний блок
     if (rightButton && !rightButtonPressed && core.getRayCast().has_value()) {
         int faceX = core.getRayCast()->facePos.x;
         int faceY = core.getRayCast()->facePos.y;
         int faceZ = core.getRayCast()->facePos.z;
 
-        core.getWorld().setBlock(faceX, faceY, faceZ, BlockType::Bedrock);
-        std::cout << "Поставлено блок на позиції ("
-                  << faceX << ", "
-                  << faceY << ", "
-                  << faceZ << ")\n";
-
-
+        // Використовуємо поточний обраний блок замість завжди Bedrock
+        core.getWorld().setBlock(faceX, faceY, faceZ, core.getSelectedBlock());
         Core::getInstance().getWorldRenderer().updateChunkAndNeighbors(faceX, faceY, faceZ);
     }
 
     leftButtonPressed = leftButton;
     rightButtonPressed = rightButton;
 }
+
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    if (g_isPaused) {
+        return;
+    }
+    Core* core = reinterpret_cast<Core*>(glfwGetWindowUserPointer(window));
+    if (core) {
+        if (yoffset > 0) {
+            core->nextSelectedBlock();
+        } else if (yoffset < 0) {
+            core->previousSelectedBlock();
+        }
+        std::cout << "Selected block: " << static_cast<int>(core->getSelectedBlock()) << std::endl;
+    }
+}
+
 
 int main() {
     if (!glfwInit()) {
@@ -152,15 +200,13 @@ int main() {
     }
 
     glfwMakeContextCurrent(window);
-
-    // Встановлюємо callback'и
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-    // Початково приховуємо курсор
+    glfwSetScrollCallback(window, scroll_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD\n";
@@ -171,8 +217,6 @@ int main() {
     if (!core.init()) {
         return -1;
     }
-
-    // Ініціалізуємо UI Manager
     UIManager uiManager;
     g_uiManager = &uiManager;
     if (!uiManager.init(800, 600)) {
@@ -192,7 +236,6 @@ int main() {
     const std::chrono::milliseconds tickInterval(1000 / tickRate);
     const std::chrono::milliseconds frameInterval(1000 / fpsRate);
 
-    // Змінні для TPS (ticks per second) підрахунку
     int tickCount = 0;
     auto lastTpsUpdate = std::chrono::high_resolution_clock::now();
 
@@ -206,20 +249,17 @@ int main() {
             // Оновлюємо UI Manager
             uiManager.update(deltaTime.count());
 
-            // Обробляємо інпут тільки якщо не на паузі
             processInput(window, core, deltaTime.count());
 
-            // Рендеримо світ
+
             core.render();
 
-            // Рендеримо UI поверх усього
             uiManager.render();
 
             glfwSwapBuffers(window);
             lastFrame = now;
         }
 
-        // Обробка тіків (логіка гри) тільки якщо не на паузі
         if (now - lastTick >= tickInterval) {
             if (!g_isPaused) {
                 core.tick();
@@ -228,7 +268,6 @@ int main() {
             tickCount++;
             lastTick = now;
 
-            // Оновлюємо TPS кожну секунду
             auto tpsElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTpsUpdate).count();
             if (tpsElapsed >= 1000) {
                 float currentTps = tickCount * 1000.0f / tpsElapsed;

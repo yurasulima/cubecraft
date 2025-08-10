@@ -19,7 +19,7 @@ glm::mat4 Camera::getViewMatrix() const {
 }
 
 glm::mat4 Camera::getProjectionMatrix(int width, int height) const {
-    return glm::perspective(glm::radians(45.0f), (float)width / height, 0.1f, 200.0f);
+    return glm::perspective(glm::radians(60.0f), (float)width / height, 0.1f, 200.0f);
 }
 
 void Camera::moveForward(float delta) {

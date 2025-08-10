@@ -1,15 +1,19 @@
-// Core.h
 #pragma once
-
-#include <iostream>
 
 #include "BlockHighlight.h"
 #include "Camera.h"
 #include "CrosshairRenderer.h"
-#include "Player.h"
+#include "HandRenderer.h"
 #include "Raycast.h"
 #include "RayRenderer.h"
 #include "Renderer.h"
+#include "Player.h"
+
+
+enum class RenderMode {
+    NORMAL,    // Звичайний рендеринг світу
+    COLLISION  // Рендеринг колізій
+};
 
 class Core {
 public:
@@ -21,7 +25,9 @@ public:
     void tick();
     void render();
 
-    Camera& getCamera() { return camera; }
+    // Updated to return player's camera instead of direct camera access
+    Camera& getCamera() { return player.getCamera(); }
+    Player& getPlayer() { return player; }
     BlockHighlight& getBlockHighlight() { return blockHighlight; }
     WorldRenderer& getWorldRenderer() { return world_renderer; }
     CrosshairRenderer& getCrosshair() { return crosshairRenderer; }
@@ -29,34 +35,43 @@ public:
     std::optional<RaycastHit>& getRayCast() { return currentHit; }
 
     void updateRaycast() {
-        // Виконуємо raycast від камери
-        currentHit = Raycast::cast(world, camera.getPosition(), camera.getFront());
-
-
+        currentHit = Raycast::cast(world, player.getCamera().getPosition(), player.getCamera().getFront());
     }
 
     World& getWorld() {return world;}
 
     static Core& getInstance() {
-        static Core instance;  // статичний локальний об'єкт, створюється при першому виклику
+        static Core instance;
         return instance;
     }
+
+    RenderMode getRenderMode() const { return renderMode; }
+    void setRenderMode(RenderMode mode) { renderMode = mode; }
+    void toggleRenderMode() {
+        renderMode = (renderMode == RenderMode::NORMAL) ? RenderMode::COLLISION : RenderMode::NORMAL;
+    }
+
+    BlockType selectedBlock = BlockType::Dirt;
+    std::vector<BlockType> availableBlocks;
+    BlockType getSelectedBlock() const { return selectedBlock; }
+    void setSelectedBlock(BlockType block) { selectedBlock = block; }
+    void nextSelectedBlock();
+    void previousSelectedBlock();
+    void setSelectedBlockByIndex(int index);
+    void initAvailableBlocks();
+
+    HandRenderer& getHandRenderer() { return handRenderer; }
 private:
+    HandRenderer handRenderer;
     Renderer renderer;
-    Camera camera;
-
-
     Player player;
     RayRenderer rayRenderer;
     World world;
     CrosshairRenderer crosshairRenderer;
     BlockHighlight blockHighlight;
     std::optional<RaycastHit> currentHit;
-
     WorldRenderer world_renderer;
-
-
-
-    int width = 800;
-    int height = 600;
+    RenderMode renderMode = RenderMode::NORMAL;
+    int width = 1100;
+    int height = 800;
 };

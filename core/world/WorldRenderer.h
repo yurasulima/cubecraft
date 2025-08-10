@@ -4,8 +4,10 @@
 
 #pragma once
 
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 
+#include "ChunkCollisionMesh.h"
 #include "World.h"
 #include "ChunkMesh.h"
 #include "TextureIndex.h"
@@ -32,25 +34,41 @@ public:
                        float x,
                        float y, float z, TextureIndex texIndex);
 
-    void render(const glm::mat4& view, const glm::mat4& projection);
+    void renderCollision(const glm::mat4& view, const glm::mat4& projection);
+    void render(const glm::mat4 &view, const glm::mat4 &projection, const glm::vec3 &cameraPos);
     void cleanup();
 
-    void setWorld(const World *world) {
+    void setWorld(World *world) {
         this->world = world;
     };
+    void buildCollisionMeshes();
+    void updateCollisionMesh(const ChunkPos& chunkPos);
+
+    void setCollisionColor(const glm::vec3& color) { collisionColor = color; }
+    glm::vec3 getCollisionColor() const { return collisionColor; }
+
 
     glm::vec3 lightDir = glm::normalize(glm::vec3(-1.0f, -1.0f, -0.3f));
     glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 0.9f);
     glm::vec3 ambientColor = glm::vec3(0.3f, 0.3f, 0.3f);
-private:
-    unsigned int VAO = 0, VBO = 0, EBO = 0;
-    unsigned int shaderProgram = 0;
-
-    const World *world = nullptr;
-    std::unordered_map<ChunkPos, ChunkMesh> chunkMeshes;
     static unsigned int textureArrayId;
     static int textureArraySize;
-    int terrainIndexCount = 0;
+private:
+    glm::vec3 fogColor;
+    float fogStart;
+    float fogEnd;
+    World* world = nullptr;
+
+    std::unordered_map<ChunkPos, ChunkMesh> chunkMeshes;
+    std::unordered_map<ChunkPos, ChunkCollisionMesh> collisionMeshes;
+
+    GLuint shaderProgram = 0;
+    GLuint collisionShaderProgram = 0;
+    GLuint VAO = 0, VBO = 0, EBO = 0;
+    glm::vec3 collisionColor = glm::vec3(1.0f, 0.0f, 0.0f);
+
+    // Приватні методи
     bool createShaderProgram();
+    bool createCollisionShaderProgram(); // Новий метод
     void loadTextureArray();
 };

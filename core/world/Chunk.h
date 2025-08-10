@@ -10,7 +10,7 @@
 #include "block/BlockType.h"
 
 constexpr int CHUNK_SIZE_X = 16;
-constexpr int CHUNK_SIZE_Y = 16;
+constexpr int CHUNK_SIZE_Y = 128;
 constexpr int CHUNK_SIZE_Z = 16;
 constexpr int CHUNK_VOLUME = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
 

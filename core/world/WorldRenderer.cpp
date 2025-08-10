@@ -1,6 +1,5 @@
 //
 // Created by mBlueberry on 08.08.2025.
-// Fixed chunk positioning version
 //
 
 #include "WorldRenderer.h"
@@ -10,8 +9,6 @@
 #include <iostream>
 #include <string>
 #include <glad/glad.h>
-
-#include "TextureIndex.h"
 #include "World.h"
 #include "Chunk.h"
 
@@ -20,82 +17,36 @@ unsigned int WorldRenderer::textureArrayId = 0;
 int WorldRenderer::textureArraySize = 0;
 
 
-void WorldRenderer::updateMeshes() {
-    Logger::info("=== WorldRenderer::updateMeshes() START ===");
-
-    if (!world) {
-        Logger::error("World pointer is null!");
-        return;
-    }
-
-    Logger::info("World has " + std::to_string(world->chunks.size()) + " chunks");
-    int chunkCount = 0;
-    int chunksWithData = 0;
-
-    for (const auto& [pos, chunk] : world->chunks) {
-        Logger::info("Processing chunk " + std::to_string(chunkCount) +
-                    " at chunk position (" + std::to_string(pos.x) + ", " + std::to_string(pos.z) + ")");
-
-        int blockCount = 0;
-        for (int x = 0; x < CHUNK_SIZE_X; ++x) {
-            for (int y = 0; y < CHUNK_SIZE_Y; ++y) {
-                for (int z = 0; z < CHUNK_SIZE_Z; ++z) {
-                    if (chunk.getBlock(x, y, z) != BlockType::Air) {
-                        blockCount++;
-                    }
-                }
-            }
-        }
-
-        Logger::info("Chunk has " + std::to_string(blockCount) + " non-air blocks");
-
-        if (blockCount > 0) {
-            ChunkMesh& mesh = chunkMeshes[pos];
-
-            mesh.buildMeshFromBlocks(chunk, *world, pos);
-
-            if (mesh.getVertexCount() > 0) {
-                mesh.uploadToGPU();
-                Logger::info("Chunk mesh uploaded with " + std::to_string(mesh.getVertexCount()) + " vertices");
-                chunksWithData++;
-            } else {
-                Logger::info("Chunk mesh has no vertices after building");
-            }
-        }
-
-        chunkCount++;
-    }
-
-    Logger::info("Total chunks processed: " + std::to_string(chunkCount));
-    Logger::info("Chunks with data: " + std::to_string(chunksWithData));
-    Logger::info("chunkMeshes.size() = " + std::to_string(chunkMeshes.size()));
-    Logger::info("=== WorldRenderer::updateMeshes() END ===");
-}
-
-
 bool WorldRenderer::init() {
-    Logger::info("WorldRenderer::init() started");
-
     if (!createShaderProgram()) {
         Logger::error("Failed to create shader program");
         return false;
     }
 
-    loadTextureArray();
+    if (!createCollisionShaderProgram()) {
+        Logger::error("Failed to create collision shader program");
+        return false;
+    }
 
+    loadTextureArray();
     glEnable(GL_DEPTH_TEST);
 
-    // Встановлюємо параметри освітлення за замовчуванням
-    lightDir = glm::vec3(-0.3f, -1.0f, -0.3f);
-    lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-    ambientColor = glm::vec3(0.3f, 0.3f, 0.3f);
+    // Покращені параметри освітлення
+    lightDir = glm::vec3(-0.4f, -0.8f, -0.3f);
+    lightColor = glm::vec3(1.0f, 0.95f, 0.8f); // Трохи теплішe світло
+    ambientColor = glm::vec3(0.4f, 0.4f, 0.45f); // Трохи світліший ambient
+    collisionColor = glm::vec3(1.0f, 0.0f, 0.0f);
 
-    Logger::info("WorldRenderer::init() completed successfully");
+    // Параметри туману
+    fogStart = 50.0f;    // Туман починається з 50 блоків
+    fogEnd = 150.0f;     // Повністю закриває на 150 блоках
+    fogColor = glm::vec3(0.7f, 0.8f, 0.9f); // Світло-блакитний туман
+
     return true;
 }
 
 
-void WorldRenderer::render(const glm::mat4 &view, const glm::mat4 &projection) {
+void WorldRenderer::render(const glm::mat4 &view, const glm::mat4 &projection, const glm::vec3 &cameraPos) {
     static int renderCallCount = 0;
     renderCallCount++;
 
@@ -114,6 +65,12 @@ void WorldRenderer::render(const glm::mat4 &view, const glm::mat4 &projection) {
     GLint lightColorLoc = glGetUniformLocation(shaderProgram, "lightColor");
     GLint ambientColorLoc = glGetUniformLocation(shaderProgram, "ambientColor");
     GLint texLoc = glGetUniformLocation(shaderProgram, "textureArray");
+    GLint viewPosLoc = glGetUniformLocation(shaderProgram, "viewPos");
+
+    // Uniform'и для туману
+    GLint fogStartLoc = glGetUniformLocation(shaderProgram, "fogStart");
+    GLint fogEndLoc = glGetUniformLocation(shaderProgram, "fogEnd");
+    GLint fogColorLoc = glGetUniformLocation(shaderProgram, "fogColor");
 
     // Встановлюємо основні матриці
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
@@ -123,114 +80,40 @@ void WorldRenderer::render(const glm::mat4 &view, const glm::mat4 &projection) {
     glUniform3fv(lightDirLoc, 1, &lightDir[0]);
     glUniform3fv(lightColorLoc, 1, &lightColor[0]);
     glUniform3fv(ambientColorLoc, 1, &ambientColor[0]);
+    glUniform3fv(viewPosLoc, 1, &cameraPos[0]);
+
+    // Встановлюємо параметри туману
+    glUniform1f(fogStartLoc, fogStart);
+    glUniform1f(fogEndLoc, fogEnd);
+    glUniform3fv(fogColorLoc, 1, &fogColor[0]);
 
     // Прив'язуємо texture array
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrayId);
     glUniform1i(texLoc, 0);
 
-    // Рендеримо всі чанки з детальним логуванням
     int renderedChunks = 0;
 
-    // ВАРІАНТ 1: Спробуємо рендерити БЕЗ translation (можливо всі чанки накладаються)
-    if (renderCallCount <= 120) { // Перші 2 секунди без translation
-        for (auto& [pos, mesh] : chunkMeshes) {
-            if (mesh.getVertexCount() == 0) {
-                continue;
-            }
-
-            // БЕЗ TRANSLATION - всі чанки в (0,0,0)
-            glm::mat4 model = glm::mat4(1.0f);
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
-
-            if (renderCallCount == 1) {
-                Logger::info("Rendering chunk at (" + std::to_string(pos.x) + ", " + std::to_string(pos.z) +
-                            ") WITHOUT translation - vertices: " + std::to_string(mesh.getVertexCount()));
-            }
-
-            mesh.render();
-            renderedChunks++;
+    for (auto &[pos, mesh]: chunkMeshes) {
+        if (mesh.getVertexCount() == 0) {
+            continue;
         }
-    }
-    // ВАРІАНТ 2: З translation
-    else {
-        for (auto& [pos, mesh] : chunkMeshes) {
-            if (mesh.getVertexCount() == 0) {
-                continue;
-            }
 
-            // З TRANSLATION
-            glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 model = glm::mat4(1.0f);
+        float chunkWorldX = pos.x * CHUNK_SIZE_X;
+        float chunkWorldZ = pos.z * CHUNK_SIZE_Z;
 
-            // КРИТИЧНО: Правильне позиціонування чанків
-            // Використовуємо константи з вашого коду
-            float chunkWorldX = pos.x * CHUNK_SIZE_X;
-            float chunkWorldZ = pos.z * CHUNK_SIZE_Z;
-
-            model = glm::translate(model, glm::vec3(chunkWorldX, 0.0f, chunkWorldZ));
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
-
-            if (renderCallCount == 121) { // Логуємо один раз коли починаємо з translation
-                Logger::info("Rendering chunk at chunk pos (" + std::to_string(pos.x) + ", " + std::to_string(pos.z) +
-                            ") with world translation (" + std::to_string(chunkWorldX) + ", 0, " +
-                            std::to_string(chunkWorldZ) + ")");
-                Logger::info("CHUNK_SIZE_X = " + std::to_string(CHUNK_SIZE_X) + ", CHUNK_SIZE_Z = " + std::to_string(CHUNK_SIZE_Z));
-            }
-
-            mesh.render();
-            renderedChunks++;
-        }
+        model = glm::translate(model, glm::vec3(chunkWorldX, 0.0f, chunkWorldZ));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
+        mesh.render();
+        renderedChunks++;
     }
 
-    if (renderCallCount % 60 == 0 || renderCallCount == 121) {
-        Logger::info("Rendered " + std::to_string(renderedChunks) + " chunks this frame");
-
-        // Додаткова діагностика: виводимо всі позиції чанків
-        Logger::info("All chunk positions:");
-        for (const auto& [pos, mesh] : chunkMeshes) {
-            Logger::info("  Chunk (" + std::to_string(pos.x) + ", " + std::to_string(pos.z) +
-                        ") - vertices: " + std::to_string(mesh.getVertexCount()));
-        }
-    }
-
-    // Відв'язуємо ресурси
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
     glUseProgram(0);
 }
 
-void WorldRenderer::cleanup() {
-    Logger::info("WorldRenderer cleanup started");
 
-    // Очищаємо чанки
-    for (auto& [pos, mesh] : chunkMeshes) {
-        mesh.destroy();
-    }
-    chunkMeshes.clear();
-
-    // Очищаємо OpenGL ресурси
-    if (VAO) {
-        glDeleteVertexArrays(1, &VAO);
-        VAO = 0;
-    }
-    if (VBO) {
-        glDeleteBuffers(1, &VBO);
-        VBO = 0;
-    }
-    if (EBO) {
-        glDeleteBuffers(1, &EBO);
-        EBO = 0;
-    }
-    if (shaderProgram) {
-        glDeleteProgram(shaderProgram);
-        shaderProgram = 0;
-    }
-    if (textureArrayId) {
-        glDeleteTextures(1, &textureArrayId);
-        textureArrayId = 0;
-    }
-
-    Logger::info("WorldRenderer cleanup completed");
-}
 
 bool WorldRenderer::createShaderProgram() {
     const char *vertexShaderSource = R"(
@@ -243,11 +126,13 @@ bool WorldRenderer::createShaderProgram() {
         uniform mat4 model;
         uniform mat4 view;
         uniform mat4 projection;
+        uniform vec3 viewPos;
 
         out vec2 TexCoord;
         out vec3 Normal;
         out float TexIndex;
         out vec3 FragPos;
+        out float DistanceFromCamera;
 
         void main() {
             vec4 worldPos = model * vec4(aPos, 1.0);
@@ -257,6 +142,9 @@ bool WorldRenderer::createShaderProgram() {
             Normal = mat3(transpose(inverse(model))) * aNormal;
             TexIndex = aTexIndex;
             FragPos = worldPos.xyz;
+
+            // Відстань від камери для туману
+            DistanceFromCamera = distance(viewPos, FragPos);
         }
     )";
 
@@ -266,25 +154,73 @@ bool WorldRenderer::createShaderProgram() {
         in vec3 Normal;
         in float TexIndex;
         in vec3 FragPos;
+        in float DistanceFromCamera;
 
         uniform sampler2DArray textureArray;
         uniform vec3 lightDir;
         uniform vec3 lightColor;
         uniform vec3 ambientColor;
+        uniform vec3 viewPos;
+
+        // Параметри туману
+        uniform float fogStart;
+        uniform float fogEnd;
+        uniform vec3 fogColor;
 
         out vec4 FragColor;
 
         void main() {
             vec3 norm = normalize(Normal);
             vec3 light = normalize(-lightDir);
+
+            // Основне освітлення (дифузне)
             float diff = max(dot(norm, light), 0.0);
 
-            vec3 ambient = ambientColor;
+            // Спекулярне освітлення для кращого вигляду
+            vec3 viewDir = normalize(viewPos - FragPos);
+            vec3 reflectDir = reflect(-light, norm);
+            float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0) * 0.3;
+
+            // М'які тіні використовуючи ambient occlusion
+            float ao = 1.0;
+            vec3 sampleOffsets[9] = vec3[](
+                vec3( 0.0,  0.0,  0.0),
+                vec3( 0.1,  0.0,  0.0),
+                vec3(-0.1,  0.0,  0.0),
+                vec3( 0.0,  0.1,  0.0),
+                vec3( 0.0, -0.1,  0.0),
+                vec3( 0.0,  0.0,  0.1),
+                vec3( 0.0,  0.0, -0.1),
+                vec3( 0.1,  0.1,  0.0),
+                vec3(-0.1, -0.1,  0.0)
+            );
+
+            // Просте затемнення в залежності від нормалі (імітація AO)
+            float verticalFactor = (norm.y + 1.0) * 0.5;
+            ao = 0.6 + 0.4 * verticalFactor;
+
+            // Додаткове затемнення для нижніх поверхонь
+            if (norm.y < 0.0) {
+                ao *= 0.7;
+            }
+
+            vec3 ambient = ambientColor * ao;
             vec3 diffuse = diff * lightColor;
-            vec3 lighting = ambient + diffuse;
+            vec3 specular = spec * lightColor;
+
+            vec3 lighting = ambient + diffuse + specular;
 
             vec4 texColor = texture(textureArray, vec3(TexCoord, TexIndex));
-            FragColor = vec4(lighting, 1.0) * texColor;
+            vec4 litColor = vec4(lighting, 1.0) * texColor;
+
+            // Обчислення туману
+            float fogFactor = 1.0;
+            if (DistanceFromCamera > fogStart) {
+                fogFactor = 1.0 - clamp((DistanceFromCamera - fogStart) / (fogEnd - fogStart), 0.0, 1.0);
+            }
+
+            // Змішування з туманом
+            FragColor = mix(vec4(fogColor, litColor.a), litColor, fogFactor);
 
             if (FragColor.a < 0.1) {
                 discard;
@@ -336,19 +272,49 @@ bool WorldRenderer::createShaderProgram() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    Logger::info("Shader program created successfully");
     return true;
 }
 
+void WorldRenderer::cleanup() {
+
+    // Очищаємо чанки
+    for (auto &[pos, mesh]: chunkMeshes) {
+        mesh.destroy();
+    }
+    chunkMeshes.clear();
+
+    // Очищаємо OpenGL ресурси
+    if (VAO) {
+        glDeleteVertexArrays(1, &VAO);
+        VAO = 0;
+    }
+    if (VBO) {
+        glDeleteBuffers(1, &VBO);
+        VBO = 0;
+    }
+    if (EBO) {
+        glDeleteBuffers(1, &EBO);
+        EBO = 0;
+    }
+    if (shaderProgram) {
+        glDeleteProgram(shaderProgram);
+        shaderProgram = 0;
+    }
+    if (textureArrayId) {
+        glDeleteTextures(1, &textureArrayId);
+        textureArrayId = 0;
+    }
+
+}
 
 void WorldRenderer::loadTextureArray() {
     std::vector<std::string> texturePaths = {
-        "D:/coding/CubeCraft/windows_app/textures/dirt.png",     // 0
+        "D:/coding/CubeCraft/windows_app/textures/dirt.png", // 0
         "D:/coding/CubeCraft/windows_app/textures/andesite.png", // 1
-        "D:/coding/CubeCraft/windows_app/textures/stone.png",    // 2
-        "D:/coding/CubeCraft/windows_app/textures/wood.png",     // 3
-        "D:/coding/CubeCraft/windows_app/textures/mud.png",      // 4
-        "D:/coding/CubeCraft/windows_app/textures/bedrock.png",  // 5
+        "D:/coding/CubeCraft/windows_app/textures/stone.png", // 2
+        "D:/coding/CubeCraft/windows_app/textures/wood.png", // 3
+        "D:/coding/CubeCraft/windows_app/textures/mud.png", // 4
+        "D:/coding/CubeCraft/windows_app/textures/bedrock.png", // 5
     };
 
     textureArraySize = (int) texturePaths.size();
@@ -392,32 +358,82 @@ void WorldRenderer::loadTextureArray() {
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
     stbi_image_free(firstImage);
 
-    Logger::info("Texture Array створено з " + std::to_string(successCount) + "/" +
-                std::to_string(textureArraySize) + " текстурами");
+
 }
 
 
+void WorldRenderer::updateMeshes() {
 
-
-
-void WorldRenderer::updateChunkMesh(const ChunkPos& chunkPos) {
-    Logger::info("Updating single chunk at (" + std::to_string(chunkPos.x) + ", " + std::to_string(chunkPos.z) + ")");
-    
     if (!world) {
         Logger::error("World pointer is null!");
         return;
     }
-    
+
+    int chunkCount = 0;
+    int chunksWithData = 0;
+
+    for (const auto &[pos, chunk]: world->chunks) {
+        int blockCount = 0;
+        for (int x = 0; x < CHUNK_SIZE_X; ++x) {
+            for (int y = 0; y < CHUNK_SIZE_Y; ++y) {
+                for (int z = 0; z < CHUNK_SIZE_Z; ++z) {
+                    if (chunk.getBlock(x, y, z) != BlockType::Air) {
+                        blockCount++;
+                    }
+                }
+            }
+        }
+
+        if (blockCount > 0) {
+            // Оновлюємо звичайний меш
+            ChunkMesh &mesh = chunkMeshes[pos];
+            mesh.buildMeshFromBlocks(chunk, *world, pos);
+
+            if (mesh.getVertexCount() > 0) {
+                mesh.uploadToGPU();
+                chunksWithData++;
+            }
+
+            // Оновлюємо колізійний меш
+            ChunkCollisionMesh &collisionMesh = collisionMeshes[pos];
+            collisionMesh.buildCollisionMeshFromBlocks(chunk, *world, pos);
+
+            if (!collisionMesh.isEmpty()) {
+                collisionMesh.uploadToGPU();
+            }
+        }
+
+        chunkCount++;
+    }
+}
+
+void WorldRenderer::updateChunkMesh(const ChunkPos &chunkPos) {
+
+    if (!world) {
+        Logger::error("World pointer is null!");
+        return;
+    }
+
     // Знаходимо чанк в світі
     auto chunkIt = world->chunks.find(chunkPos);
     if (chunkIt == world->chunks.end()) {
-        Logger::info("Chunk not found in world at position (" + 
-                       std::to_string(chunkPos.x) + ", " + std::to_string(chunkPos.z) + ")");
+
+        auto meshIt = chunkMeshes.find(chunkPos);
+        if (meshIt != chunkMeshes.end()) {
+            meshIt->second.destroy();
+            chunkMeshes.erase(meshIt);
+        }
+
+        auto collisionIt = collisionMeshes.find(chunkPos);
+        if (collisionIt != collisionMeshes.end()) {
+            collisionIt->second.destroy();
+            collisionMeshes.erase(collisionIt);
+        }
         return;
     }
-    
-    const Chunk& chunk = chunkIt->second;
-    
+
+    const Chunk &chunk = chunkIt->second;
+
     // Перевіряємо чи є блоки в чанку
     int blockCount = 0;
     for (int x = 0; x < CHUNK_SIZE_X; ++x) {
@@ -429,64 +445,54 @@ void WorldRenderer::updateChunkMesh(const ChunkPos& chunkPos) {
             }
         }
     }
-    
-    Logger::info("Chunk has " + std::to_string(blockCount) + " non-air blocks");
-    
+
+
     if (blockCount > 0) {
-        // Отримуємо або створюємо меш для цього чанка
-        ChunkMesh& mesh = chunkMeshes[chunkPos];
-        
-        // Перебудовуємо меш
+        ChunkMesh &mesh = chunkMeshes[chunkPos];
         mesh.buildMeshFromBlocks(chunk, *world, chunkPos);
-        
+
         if (mesh.getVertexCount() > 0) {
             mesh.uploadToGPU();
-            Logger::info("Chunk mesh updated with " + std::to_string(mesh.getVertexCount()) + " vertices");
-        } else {
-            Logger::info("Chunk mesh has no vertices after rebuilding");
         }
+        updateCollisionMesh(chunkPos);
     } else {
-        // Якщо в чанку немає блоків, видаляємо його меш
+        // Якщо в чанку немає блоків, видаляємо меші
         auto meshIt = chunkMeshes.find(chunkPos);
         if (meshIt != chunkMeshes.end()) {
             meshIt->second.destroy();
             chunkMeshes.erase(meshIt);
-            Logger::info("Empty chunk mesh removed");
+        }
+
+        auto collisionIt = collisionMeshes.find(chunkPos);
+        if (collisionIt != collisionMeshes.end()) {
+            collisionIt->second.destroy();
+            collisionMeshes.erase(collisionIt);
         }
     }
 }
 
-// Оновлення чанка за світовими координатами блоку
 void WorldRenderer::updateChunkMeshForBlock(int worldX, int worldY, int worldZ) {
-    // Конвертуємо світові координати в позицію чанка
     ChunkPos chunkPos;
     chunkPos.x = worldX / CHUNK_SIZE_X;
     chunkPos.z = worldZ / CHUNK_SIZE_Z;
-    
-    // Обробляємо негативні координати правильно
     if (worldX < 0 && worldX % CHUNK_SIZE_X != 0) {
         chunkPos.x--;
     }
     if (worldZ < 0 && worldZ % CHUNK_SIZE_Z != 0) {
         chunkPos.z--;
     }
-    
-    Logger::info("Block at world (" + std::to_string(worldX) + ", " + std::to_string(worldY) + ", " + std::to_string(worldZ) + 
-                ") is in chunk (" + std::to_string(chunkPos.x) + ", " + std::to_string(chunkPos.z) + ")");
-    
+
     updateChunkMesh(chunkPos);
 }
 
-// Оновлення чанка та його сусідів (якщо блок на межі)
 void WorldRenderer::updateChunkAndNeighbors(int worldX, int worldY, int worldZ) {
-    // Обчислюємо позицію чанка та локальні координати в чанку
     ChunkPos chunkPos;
     chunkPos.x = worldX / CHUNK_SIZE_X;
     chunkPos.z = worldZ / CHUNK_SIZE_Z;
-    
+
     int localX = worldX % CHUNK_SIZE_X;
     int localZ = worldZ % CHUNK_SIZE_Z;
-    
+
     // Обробляємо негативні координати
     if (worldX < 0 && worldX % CHUNK_SIZE_X != 0) {
         chunkPos.x--;
@@ -496,10 +502,10 @@ void WorldRenderer::updateChunkAndNeighbors(int worldX, int worldY, int worldZ) 
         chunkPos.z--;
         localZ = CHUNK_SIZE_Z + localZ;
     }
-    
+
     // Завжди оновлюємо основний чанк
     updateChunkMesh(chunkPos);
-    
+
     // Перевіряємо чи блок на межі чанка і оновлюємо сусідів
     if (localX == 0) {
         // Блок на західній межі - оновлюємо західного сусіда
@@ -521,4 +527,218 @@ void WorldRenderer::updateChunkAndNeighbors(int worldX, int worldY, int worldZ) 
         ChunkPos neighborPos = {chunkPos.x, chunkPos.z + 1};
         updateChunkMesh(neighborPos);
     }
+}
+
+
+// Додайте ці методи до вашого WorldRenderer.cpp
+
+bool WorldRenderer::createCollisionShaderProgram() {
+    const char *vertexShaderSource = R"(
+        #version 330 core
+        layout (location = 0) in vec3 aPos;
+
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+
+        void main() {
+            gl_Position = projection * view * model * vec4(aPos, 1.0);
+        }
+    )";
+
+    const char *fragmentShaderSource = R"(
+        #version 330 core
+        out vec4 FragColor;
+
+        uniform vec3 wireframeColor;
+
+        void main() {
+            FragColor = vec4(wireframeColor, 1.0);
+        }
+    )";
+
+    GLint success;
+    GLchar infoLog[512];
+
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
+    glCompileShader(vertexShader);
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog);
+        Logger::error(std::string("Collision vertex shader compile error: ") + infoLog);
+        glDeleteShader(vertexShader);
+        return false;
+    }
+
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
+    glCompileShader(fragmentShader);
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
+        Logger::error(std::string("Collision fragment shader compile error: ") + infoLog);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        return false;
+    }
+
+    collisionShaderProgram = glCreateProgram();
+    glAttachShader(collisionShaderProgram, vertexShader);
+    glAttachShader(collisionShaderProgram, fragmentShader);
+    glLinkProgram(collisionShaderProgram);
+    glGetProgramiv(collisionShaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(collisionShaderProgram, 512, nullptr, infoLog);
+        Logger::error(std::string("Collision shader program link error: ") + infoLog);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        glDeleteProgram(collisionShaderProgram);
+        collisionShaderProgram = 0;
+        return false;
+    }
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    return true;
+}
+
+void WorldRenderer::buildCollisionMeshes() {
+
+    if (!world) {
+        Logger::error("World pointer is null!");
+        return;
+    }
+
+    // Очищаємо старі колізійні меші
+    for (auto &[pos, mesh]: collisionMeshes) {
+        mesh.destroy();
+    }
+    collisionMeshes.clear();
+
+    int builtMeshes = 0;
+    for (const auto &[pos, chunk]: world->chunks) {
+        // Перевіряємо чи є блоки в чанку
+        bool hasBlocks = false;
+        for (int x = 0; x < CHUNK_SIZE_X && !hasBlocks; ++x) {
+            for (int y = 0; y < CHUNK_SIZE_Y && !hasBlocks; ++y) {
+                for (int z = 0; z < CHUNK_SIZE_Z && !hasBlocks; ++z) {
+                    if (chunk.getBlock(x, y, z) != BlockType::Air) {
+                        hasBlocks = true;
+                    }
+                }
+            }
+        }
+
+        if (hasBlocks) {
+            ChunkCollisionMesh &collisionMesh = collisionMeshes[pos];
+            collisionMesh.buildCollisionMeshFromBlocks(chunk, *world, pos);
+
+            if (!collisionMesh.isEmpty()) {
+                collisionMesh.uploadToGPU();
+                builtMeshes++;
+            }
+        }
+    }
+
+}
+
+void WorldRenderer::updateCollisionMesh(const ChunkPos &chunkPos) {
+    if (!world) {
+        Logger::error("World pointer is null!");
+        return;
+    }
+
+    auto chunkIt = world->chunks.find(chunkPos);
+    if (chunkIt == world->chunks.end()) {
+        // Чанк не знайдено - видаляємо колізійний меш якщо є
+        auto meshIt = collisionMeshes.find(chunkPos);
+        if (meshIt != collisionMeshes.end()) {
+            meshIt->second.destroy();
+            collisionMeshes.erase(meshIt);
+        }
+        return;
+    }
+
+    const Chunk &chunk = chunkIt->second;
+
+    // Перевіряємо чи є блоки
+    bool hasBlocks = false;
+    for (int x = 0; x < CHUNK_SIZE_X && !hasBlocks; ++x) {
+        for (int y = 0; y < CHUNK_SIZE_Y && !hasBlocks; ++y) {
+            for (int z = 0; z < CHUNK_SIZE_Z && !hasBlocks; ++z) {
+                if (chunk.getBlock(x, y, z) != BlockType::Air) {
+                    hasBlocks = true;
+                }
+            }
+        }
+    }
+
+    if (hasBlocks) {
+        ChunkCollisionMesh &collisionMesh = collisionMeshes[chunkPos];
+        collisionMesh.buildCollisionMeshFromBlocks(chunk, *world, chunkPos);
+
+        if (!collisionMesh.isEmpty()) {
+            collisionMesh.uploadToGPU();
+        }
+    } else {
+        // Видаляємо меш якщо немає блоків
+        auto meshIt = collisionMeshes.find(chunkPos);
+        if (meshIt != collisionMeshes.end()) {
+            meshIt->second.destroy();
+            collisionMeshes.erase(meshIt);
+        }
+    }
+}
+
+void WorldRenderer::renderCollision(const glm::mat4 &view, const glm::mat4 &projection) {
+    if (collisionShaderProgram == 0) {
+        Logger::error("Collision shader program is not initialized!");
+        return;
+    }
+
+    // Зберігаємо поточний стан OpenGL
+    GLboolean depthTest;
+    glGetBooleanv(GL_DEPTH_TEST, &depthTest);
+
+    GLfloat lineWidth;
+    glGetFloatv(GL_LINE_WIDTH, &lineWidth);
+
+    // Налаштування для wireframe рендерингу
+    glUseProgram(collisionShaderProgram);
+    glLineWidth(2.0f); // Товщі лінії для кращої видимості
+
+    // Встановлюємо uniform'и
+    GLint viewLoc = glGetUniformLocation(collisionShaderProgram, "view");
+    GLint projLoc = glGetUniformLocation(collisionShaderProgram, "projection");
+    GLint modelLoc = glGetUniformLocation(collisionShaderProgram, "model");
+    GLint colorLoc = glGetUniformLocation(collisionShaderProgram, "wireframeColor");
+
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, &projection[0][0]);
+    glUniform3fv(colorLoc, 1, &collisionColor[0]);
+
+    // Рендеримо всі колізійні меші
+    int renderedMeshes = 0;
+    for (const auto &[pos, mesh]: collisionMeshes) {
+        if (mesh.isEmpty()) continue;
+
+        // Встановлюємо позицію чанка
+        glm::mat4 model = glm::mat4(1.0f);
+        float chunkWorldX = pos.x * CHUNK_SIZE_X;
+        float chunkWorldZ = pos.z * CHUNK_SIZE_Z;
+        model = glm::translate(model, glm::vec3(chunkWorldX, 0.0f, chunkWorldZ));
+
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
+
+        mesh.render();
+        renderedMeshes++;
+    }
+
+    // Відновлюємо стан OpenGL
+    glLineWidth(lineWidth);
+    if (!depthTest)
+        glDisable(GL_DEPTH_TEST);
+
+    glUseProgram(0);
 }

@@ -64,10 +64,8 @@ void ChunkMesh::uploadToGPU() {
     glBindVertexArray(0);
 
     uploaded = true;
-    Logger::info("Mesh uploaded to GPU with " + std::to_string(vertices.size()) + " vertices");
 }
 
-// Функція для отримання texture index з типу блоку
 float ChunkMesh::getTextureIndex(BlockType type) {
     switch (type) {
         case BlockType::Dirt:    return 0.0f;
@@ -75,7 +73,7 @@ float ChunkMesh::getTextureIndex(BlockType type) {
         case BlockType::Wood:    return 3.0f;
         case BlockType::Mud:     return 4.0f;
         case BlockType::Bedrock: return 5.0f;
-        default:                 return 0.0f; // Dirt за замовчуванням
+        default:                 return 0.0f;
     }
 }
 
@@ -85,7 +83,6 @@ void ChunkMesh::buildMeshFromBlocks(const Chunk& chunk, const World& world, cons
     int totalBlocks = 0;
     int visibleFaces = 0;
 
-    // Вычисляем мировые координаты начала чанка
     int chunkWorldX = chunkPos.x * CHUNK_SIZE_X;
     int chunkWorldZ = chunkPos.z * CHUNK_SIZE_Z;
 
@@ -162,10 +159,6 @@ void ChunkMesh::buildMeshFromBlocks(const Chunk& chunk, const World& world, cons
             }
         }
     }
-
-    Logger::info("Chunk mesh built: " + std::to_string(totalBlocks) + " blocks, " +
-                std::to_string(visibleFaces) + " visible faces, " +
-                std::to_string(vertices.size()) + " vertices");
 }
 
 // Допоміжна функція для перевірки чи є блок повітрям

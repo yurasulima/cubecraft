@@ -27,3 +27,11 @@ void Logger::error(const std::string& msg) {
     std::cerr << "[ERROR] " << msg << std::endl;
 #endif
 }
+
+void Logger::debug(const std::string& msg) {
+#ifdef __ANDROID__
+    __android_log_print(ANDROID_LOG_ERROR, TAG, "%s", msg.c_str());
+#else
+    std::cerr << "[DEBUG] " << msg << std::endl;
+#endif
+}

@@ -4,14 +4,12 @@
 
 #include "MeshBlock.h"
 #include <iostream>
+#include <glad/glad.h>
 
-// Новий конструктор для Texture Array
-MeshBlock::MeshBlock(const std::vector<float>& vertices,
-                     const std::vector<unsigned int>& indices,
+MeshBlock::MeshBlock(const std::vector<float> &vertices,
+                     const std::vector<unsigned int> &indices,
                      int textureIndex)
-    : vertices(vertices), indices(indices), textureIndex(textureIndex),
-      textureId(0), useTextureArray(true) {
-
+    : vertices(vertices), indices(indices), textureIndex(textureIndex) {
     setupMesh();
 }
 
@@ -35,32 +33,20 @@ void MeshBlock::setupMesh() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
-    if (useTextureArray) {
-        // Новий формат: pos(3) + uv(2) + texIndex(1) = 6 float на вершину
+    // Новий формат: pos(3) + uv(2) + texIndex(1) = 6 float на вершину
 
-        // Позиції (attribute 0)
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
+    // Позиції (attribute 0)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(0);
 
-        // UV координати (attribute 1)
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
+    // UV координати (attribute 1)
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
-        // Texture index (attribute 2)
-        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
-        glEnableVertexAttribArray(2);
+    // Texture index (attribute 2)
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (5 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
-    } else {
-        // Старий формат: pos(3) + uv(2) = 5 float на вершину
-
-        // Позиції (attribute 0)
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-
-        // UV координати (attribute 1)
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-    }
 
     glBindVertexArray(0);
 }

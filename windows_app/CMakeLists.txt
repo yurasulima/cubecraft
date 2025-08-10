@@ -47,8 +47,17 @@ add_executable(CubeCraft
         ../core/DebugRayRenderer.h
         ../core/ui/UIManager.cpp
         ../core/ui/UIManager.h
-        ../core/Player.cpp
         ../core/Player.h
+        ../core/collision/AABB.h
+        ../core/collision/CollisionSystem.h
+        ../core/collision/CollisionSystem.cpp
+        ../core/Player.cpp
+        ../core/PlayerRenderer.cpp
+        ../core/PlayerRenderer.h
+        ../core/ChunkCollisionMesh.cpp
+        ../core/ChunkCollisionMesh.h
+        ../core/HandRenderer.cpp
+        ../core/HandRenderer.h
 )
 target_include_directories(CubeCraft PUBLIC
         ../core

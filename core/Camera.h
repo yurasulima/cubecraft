@@ -9,30 +9,24 @@
 
 class Camera {
 public:
-    // Конструктор
+
     Camera();
 
-    // Методи для отримання матриць
     glm::mat4 getModelMatrix() const;
     glm::mat4 getViewMatrix() const;
     glm::mat4 getProjectionMatrix(int width, int height) const;
 
-    // Методи руху
     void moveForward(float delta);
     void moveBackward(float delta);
     void moveLeft(float delta);
     void moveRight(float delta);
-    void moveUp(float delta);      // Рух вгору по Y-осі
-    void moveDown(float delta);    // Рух вниз по Y-осі
-
-    // Поворот камери
+    void moveUp(float delta);
+    void moveDown(float delta);
     void rotate(float yawOffset, float pitchOffset);
-
-    // Зручний метод для обробки всього керування
     void processKeyboard(float deltaTime, bool moveForward, bool moveBackward,
                         bool moveLeft, bool moveRight, bool moveUp, bool moveDown);
 
-    // Геттери/сеттери
+
     glm::vec3 getPosition() const { return position; }
     void setPosition(const glm::vec3& pos) { position = pos; }
 
@@ -43,6 +37,7 @@ public:
     void setMouseSensitivity(float sensitivity) { mouseSensitivity = sensitivity; }
 
     glm::vec3 getFront() const { return front; }
+    glm::vec3 getRight() const { return right; }
     glm::vec3 getPosition() { return position; }
 private:
 
