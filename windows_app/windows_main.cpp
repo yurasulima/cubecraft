@@ -102,30 +102,32 @@ void processInput(GLFWwindow* window, Core& core, float deltaTime) {
 
     // Лівий клік - видалити блок
     if (leftButton && !leftButtonPressed && core.getRayCast().has_value()) {
-        auto blockPos = core.getRayCast()->blockPos;
+        int blockX = core.getRayCast()->blockPos.x;
+        int blockY = core.getRayCast()->blockPos.y;
+        int blockZ = core.getRayCast()->blockPos.z;
 
-        core.getWorld().setBlock(blockPos.x, blockPos.y, blockPos.z, BlockType::Air);
+        core.getWorld().setBlock(blockX, blockY, blockZ, BlockType::Air);
         std::cout << "Видалено блок на позиції ("
-                  << blockPos.x << ", " << blockPos.y << ", " << blockPos.z << ")\n";
+                  << blockX << ", "
+                  << blockY << ", "
+                  << blockZ << ")\n";
 
-        // Оновлюємо лише потрібний чанк та його сусідів
-        Core::getInstance().getWorldRenderer().updateChunkAt(
-            core.getWorld(), blockPos.x, blockPos.z
-        );
+        Core::getInstance().getWorldRenderer().updateChunkAndNeighbors(blockX, blockY, blockZ);
     }
 
-    // Правий клік - поставити блок
     if (rightButton && !rightButtonPressed && core.getRayCast().has_value()) {
-        auto facePos = core.getRayCast()->facePos;
+        int faceX = core.getRayCast()->facePos.x;
+        int faceY = core.getRayCast()->facePos.y;
+        int faceZ = core.getRayCast()->facePos.z;
 
-        core.getWorld().setBlock(facePos.x, facePos.y, facePos.z, BlockType::Bedrock);
+        core.getWorld().setBlock(faceX, faceY, faceZ, BlockType::Bedrock);
         std::cout << "Поставлено блок на позиції ("
-                  << facePos.x << ", " << facePos.y << ", " << facePos.z << ")\n";
+                  << faceX << ", "
+                  << faceY << ", "
+                  << faceZ << ")\n";
 
-        // Оновлюємо лише потрібний чанк та його сусідів
-        Core::getInstance().getWorldRenderer().updateChunkAt(
-            core.getWorld(), facePos.x, facePos.z
-        );
+
+        Core::getInstance().getWorldRenderer().updateChunkAndNeighbors(faceX, faceY, faceZ);
     }
 
     leftButtonPressed = leftButton;

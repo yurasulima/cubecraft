@@ -29,9 +29,6 @@ void WorldRenderer::updateMeshes() {
     }
 
     Logger::info("World has " + std::to_string(world->chunks.size()) + " chunks");
-
-    // НЕ очищаємо старі мешi, просто оновлюємо
-
     int chunkCount = 0;
     int chunksWithData = 0;
 
@@ -39,7 +36,6 @@ void WorldRenderer::updateMeshes() {
         Logger::info("Processing chunk " + std::to_string(chunkCount) +
                     " at chunk position (" + std::to_string(pos.x) + ", " + std::to_string(pos.z) + ")");
 
-        // Перевіряємо чи є блоки в чанку
         int blockCount = 0;
         for (int x = 0; x < CHUNK_SIZE_X; ++x) {
             for (int y = 0; y < CHUNK_SIZE_Y; ++y) {
@@ -398,4 +394,131 @@ void WorldRenderer::loadTextureArray() {
 
     Logger::info("Texture Array створено з " + std::to_string(successCount) + "/" +
                 std::to_string(textureArraySize) + " текстурами");
+}
+
+
+
+
+
+void WorldRenderer::updateChunkMesh(const ChunkPos& chunkPos) {
+    Logger::info("Updating single chunk at (" + std::to_string(chunkPos.x) + ", " + std::to_string(chunkPos.z) + ")");
+    
+    if (!world) {
+        Logger::error("World pointer is null!");
+        return;
+    }
+    
+    // Знаходимо чанк в світі
+    auto chunkIt = world->chunks.find(chunkPos);
+    if (chunkIt == world->chunks.end()) {
+        Logger::info("Chunk not found in world at position (" + 
+                       std::to_string(chunkPos.x) + ", " + std::to_string(chunkPos.z) + ")");
+        return;
+    }
+    
+    const Chunk& chunk = chunkIt->second;
+    
+    // Перевіряємо чи є блоки в чанку
+    int blockCount = 0;
+    for (int x = 0; x < CHUNK_SIZE_X; ++x) {
+        for (int y = 0; y < CHUNK_SIZE_Y; ++y) {
+            for (int z = 0; z < CHUNK_SIZE_Z; ++z) {
+                if (chunk.getBlock(x, y, z) != BlockType::Air) {
+                    blockCount++;
+                }
+            }
+        }
+    }
+    
+    Logger::info("Chunk has " + std::to_string(blockCount) + " non-air blocks");
+    
+    if (blockCount > 0) {
+        // Отримуємо або створюємо меш для цього чанка
+        ChunkMesh& mesh = chunkMeshes[chunkPos];
+        
+        // Перебудовуємо меш
+        mesh.buildMeshFromBlocks(chunk, *world, chunkPos);
+        
+        if (mesh.getVertexCount() > 0) {
+            mesh.uploadToGPU();
+            Logger::info("Chunk mesh updated with " + std::to_string(mesh.getVertexCount()) + " vertices");
+        } else {
+            Logger::info("Chunk mesh has no vertices after rebuilding");
+        }
+    } else {
+        // Якщо в чанку немає блоків, видаляємо його меш
+        auto meshIt = chunkMeshes.find(chunkPos);
+        if (meshIt != chunkMeshes.end()) {
+            meshIt->second.destroy();
+            chunkMeshes.erase(meshIt);
+            Logger::info("Empty chunk mesh removed");
+        }
+    }
+}
+
+// Оновлення чанка за світовими координатами блоку
+void WorldRenderer::updateChunkMeshForBlock(int worldX, int worldY, int worldZ) {
+    // Конвертуємо світові координати в позицію чанка
+    ChunkPos chunkPos;
+    chunkPos.x = worldX / CHUNK_SIZE_X;
+    chunkPos.z = worldZ / CHUNK_SIZE_Z;
+    
+    // Обробляємо негативні координати правильно
+    if (worldX < 0 && worldX % CHUNK_SIZE_X != 0) {
+        chunkPos.x--;
+    }
+    if (worldZ < 0 && worldZ % CHUNK_SIZE_Z != 0) {
+        chunkPos.z--;
+    }
+    
+    Logger::info("Block at world (" + std::to_string(worldX) + ", " + std::to_string(worldY) + ", " + std::to_string(worldZ) + 
+                ") is in chunk (" + std::to_string(chunkPos.x) + ", " + std::to_string(chunkPos.z) + ")");
+    
+    updateChunkMesh(chunkPos);
+}
+
+// Оновлення чанка та його сусідів (якщо блок на межі)
+void WorldRenderer::updateChunkAndNeighbors(int worldX, int worldY, int worldZ) {
+    // Обчислюємо позицію чанка та локальні координати в чанку
+    ChunkPos chunkPos;
+    chunkPos.x = worldX / CHUNK_SIZE_X;
+    chunkPos.z = worldZ / CHUNK_SIZE_Z;
+    
+    int localX = worldX % CHUNK_SIZE_X;
+    int localZ = worldZ % CHUNK_SIZE_Z;
+    
+    // Обробляємо негативні координати
+    if (worldX < 0 && worldX % CHUNK_SIZE_X != 0) {
+        chunkPos.x--;
+        localX = CHUNK_SIZE_X + localX;
+    }
+    if (worldZ < 0 && worldZ % CHUNK_SIZE_Z != 0) {
+        chunkPos.z--;
+        localZ = CHUNK_SIZE_Z + localZ;
+    }
+    
+    // Завжди оновлюємо основний чанк
+    updateChunkMesh(chunkPos);
+    
+    // Перевіряємо чи блок на межі чанка і оновлюємо сусідів
+    if (localX == 0) {
+        // Блок на західній межі - оновлюємо західного сусіда
+        ChunkPos neighborPos = {chunkPos.x - 1, chunkPos.z};
+        updateChunkMesh(neighborPos);
+    }
+    if (localX == CHUNK_SIZE_X - 1) {
+        // Блок на східній межі - оновлюємо східного сусіда
+        ChunkPos neighborPos = {chunkPos.x + 1, chunkPos.z};
+        updateChunkMesh(neighborPos);
+    }
+    if (localZ == 0) {
+        // Блок на північній межі - оновлюємо північного сусіда
+        ChunkPos neighborPos = {chunkPos.x, chunkPos.z - 1};
+        updateChunkMesh(neighborPos);
+    }
+    if (localZ == CHUNK_SIZE_Z - 1) {
+        // Блок на південній межі - оновлюємо південного сусіда
+        ChunkPos neighborPos = {chunkPos.x, chunkPos.z + 1};
+        updateChunkMesh(neighborPos);
+    }
 }

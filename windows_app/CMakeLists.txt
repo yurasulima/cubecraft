@@ -47,6 +47,8 @@ add_executable(CubeCraft
         ../core/DebugRayRenderer.h
         ../core/ui/UIManager.cpp
         ../core/ui/UIManager.h
+        ../core/Player.cpp
+        ../core/Player.h
 )
 target_include_directories(CubeCraft PUBLIC
         ../core

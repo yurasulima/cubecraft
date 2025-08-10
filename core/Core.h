@@ -6,6 +6,7 @@
 #include "BlockHighlight.h"
 #include "Camera.h"
 #include "CrosshairRenderer.h"
+#include "Player.h"
 #include "Raycast.h"
 #include "RayRenderer.h"
 #include "Renderer.h"
@@ -45,6 +46,7 @@ private:
     Camera camera;
 
 
+    Player player;
     RayRenderer rayRenderer;
     World world;
     CrosshairRenderer crosshairRenderer;

@@ -16,6 +16,12 @@ class WorldRenderer {
 public:
 
 
+    void updateChunkMesh(const ChunkPos &chunkPos);
+
+    void updateChunkMeshForBlock(int worldX, int worldY, int worldZ);
+
+    void updateChunkAndNeighbors(int worldX, int worldY, int worldZ);
+
     void updateMeshes();
 
 
