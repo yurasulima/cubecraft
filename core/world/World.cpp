@@ -3,9 +3,6 @@
 //
 #include "World.h"
 
-#include <iostream>
-#include <random>
-
 #include "Renderer.h"
 #include "external/FastNoiseLite.h"
 
@@ -123,3 +120,54 @@ void World::generateFlatWorld() {
         }
     }
 }
+
+void World::generateChunk(const ChunkPos& pos) {
+    FastNoiseLite noise;
+    noise.SetSeed(12345);
+    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    noise.SetFrequency(0.02f);
+
+    const int MIN_HEIGHT = 0;
+    const int MAX_HEIGHT = 40;
+    const int BEDROCK_LAYERS = 3;
+
+    int chunkWorldX = pos.x * CHUNK_SIZE_X;
+    int chunkWorldZ = pos.z * CHUNK_SIZE_Z;
+
+    for (int lx = 0; lx < CHUNK_SIZE_X; ++lx) {
+        for (int lz = 0; lz < CHUNK_SIZE_X; ++lz) {
+            int wx = chunkWorldX + lx;
+            int wz = chunkWorldZ + lz;
+
+            float noiseValue = noise.GetNoise((float)wx, (float)wz);
+            int surfaceHeight = MIN_HEIGHT + (int)((noiseValue + 1.0f) * 0.5f * MAX_HEIGHT);
+
+            for (int y = MIN_HEIGHT; y <= surfaceHeight; ++y) {
+                if (y < BEDROCK_LAYERS) {
+                    setBlock(wx, y, wz, BlockType::Bedrock);
+                }
+                else if (y == surfaceHeight) {
+                    setBlock(wx, y, wz, BlockType::Stone);
+                }
+                else if (y >= surfaceHeight - 3) {
+                    setBlock(wx, y, wz, BlockType::Dirt);
+                }
+                else {
+                    setBlock(wx, y, wz, BlockType::Mud);
+                }
+            }
+        }
+    }
+}
+
+bool World::updatePlayerPosition(const glm::vec3& playerPos) {
+    ChunkPos currentChunk = toChunkPos((int)playerPos.x, (int)playerPos.z);
+
+    // Якщо чанка немає або він пустий — генеруємо
+    if (!chunks.contains(currentChunk) || chunks[currentChunk].isEmpty()) {
+        generateChunk(currentChunk);
+        return true;
+    }
+    return false;
+}
+

@@ -3,7 +3,7 @@
 //
 #include "BlockHighlight.h"
 #include "Raycast.h"
-#include <glm/gtc/matrix_transform.hpp>
+#include "external/glm/gtc/matrix_transform.hpp"
 
 const char* highlightVertexShader = R"(
 #version 330 core
@@ -106,7 +106,7 @@ void BlockHighlight::render(const glm::mat4& view, const glm::mat4& projection, 
 
     glUseProgram(shaderProgram);
     glLineWidth(lineWidth);
-    glEnable(GL_LINE_SMOOTH);
+
     glEnable(GL_DEPTH_TEST);
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(hit->blockPos) + glm::vec3(0.5f));
@@ -121,7 +121,6 @@ void BlockHighlight::render(const glm::mat4& view, const glm::mat4& projection, 
     glBindVertexArray(0);
 
     glEnable(GL_DEPTH_TEST);
-    glDisable(GL_LINE_SMOOTH);
     glLineWidth(1.0f);
 }
 

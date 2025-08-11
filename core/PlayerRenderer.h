@@ -4,9 +4,19 @@
 
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "external/glm/glm.hpp"
+#include "external/glm/gtc/matrix_transform.hpp"
+
+
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
 #include <glad/glad.h>
+#endif
+#endif
 
 class PlayerRenderer {
 public:

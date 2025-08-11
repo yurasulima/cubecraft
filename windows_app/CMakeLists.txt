@@ -58,6 +58,12 @@ add_executable(CubeCraft
         ../core/ChunkCollisionMesh.h
         ../core/HandRenderer.cpp
         ../core/HandRenderer.h
+        ../core/input/InputHandler.h
+        ../core/input/InputEvents.h
+        ../core/input/DesktopInputHandler.cpp
+        ../core/input/DesktopInputHandler.h
+        ../core/input/InputManager.cpp
+        ../core/input/InputManager.h
 )
 target_include_directories(CubeCraft PUBLIC
         ../core

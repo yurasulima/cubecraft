@@ -110,7 +110,6 @@ void* renderLoop(void* arg) {
     core->resize(ANativeWindow_getWidth(window), ANativeWindow_getHeight(window));
 
     while (rendering) {
-        core->update(0.016f);
         core->render();
         eglSwapBuffers(display, surface);
 

@@ -4,7 +4,7 @@
 #pragma once
 #include "RayRenderer.h"
 #include <vector>
-#include <glm/glm.hpp>
+#include "external/glm/glm.hpp>
 
 // Розширена версія для детального налагодження raycast алгоритму
 class DebugRayRenderer : public RayRenderer {

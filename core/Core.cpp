@@ -1,9 +1,11 @@
 // Core.cpp
+#include "external/glm/vec3.hpp"
 #include "Core.h"
 
 #include "Logger.h"
 #include "block/AirBlock.h"
 #include "block/BedrockBlock.h"
+#include <algorithm>
 
 Core::Core() = default;
 
@@ -38,6 +40,7 @@ void Core::render() {
     auto projection = getCamera().getProjectionMatrix(width, height);
     renderer.render(model, view, projection);
     player.render(view, projection);
+
 }
 
 
@@ -59,7 +62,7 @@ void Core::initAvailableBlocks() {
 void Core::nextSelectedBlock() {
     if (availableBlocks.empty()) return;
 
-    auto it = std::ranges::find(availableBlocks, selectedBlock);
+    auto it = std::find(availableBlocks.begin(), availableBlocks.end(), selectedBlock);
     if (it != availableBlocks.end()) {
         // Переходимо до наступного блоку
         ++it;

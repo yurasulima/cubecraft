@@ -4,7 +4,7 @@
 #pragma once
 
 #include <vector>
-#include <glm/glm.hpp>
+#include "external/glm/glm.hpp"
 
 #include "World.h"
 #include "block/BlockType.h"

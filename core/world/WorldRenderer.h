@@ -4,8 +4,18 @@
 
 #pragma once
 
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
 #include <glad/glad.h>
-#include <glm/glm.hpp>
+#endif
+#endif
+
+
+#include "external/glm/glm.hpp"
 
 #include "ChunkCollisionMesh.h"
 #include "World.h"

@@ -2,13 +2,9 @@
 // Created by mBlueberry on 10.08.2025.
 //
 
-//
-// ChunkCollisionMesh.h - Клас для рендерингу колізії блоків чанка
-//
-
 #pragma once
 #include <vector>
-#include <glm/glm.hpp>
+#include "external/glm/glm.hpp"
 #include "block/BlockType.h"
 
 class Chunk;

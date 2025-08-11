@@ -1,7 +1,7 @@
 #pragma once
 
 #include <chrono>
-#include <glm/glm.hpp>
+#include "external/glm/glm.hpp"
 #include <vector>
 #include <memory>
 

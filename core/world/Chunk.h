@@ -21,6 +21,8 @@ public:
     BlockType getBlock(int x, int y, int z) const;
     void setBlock(int x, int y, int z, BlockType type);
 
+    bool isEmpty() const;
+
 private:
     std::array<BlockType, CHUNK_VOLUME> blocks;
 

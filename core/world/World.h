@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include "Chunk.h"
 #include "block/BlockType.h"
+#include "external/glm/vec3.hpp"
 
 struct ChunkPos {
     int x, z;
@@ -30,6 +31,9 @@ public:
     void setBlock(int x, int y, int z, BlockType type);
     std::unordered_map<ChunkPos, Chunk> chunks;
     void generateFlatWorld();
+
+    void generateChunk(const ChunkPos &pos);
+    bool updatePlayerPosition(const glm::vec3& playerPos);
 
 private:
     static ChunkPos toChunkPos(int x, int z);

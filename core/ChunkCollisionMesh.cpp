@@ -7,7 +7,12 @@
 #include "world/Chunk.h"
 #include "world/World.h"
 #include "Logger.h"
+
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
 #include <glad/glad.h>
+#endif
 
 ChunkCollisionMesh::ChunkCollisionMesh() : vao(0), vbo(0), uploaded(false) {}
 
@@ -126,8 +131,14 @@ void ChunkCollisionMesh::render() const {
         return;
     }
 
-    // Встановлюємо режим wireframe
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        #ifdef __ANDROID__
+        // Android (OpenGL ES) - wireframe режим треба реалізувати інакше або пропустити
+        // Просто не виконуємо glPolygonMode, бо її немає
+        #else
+        // Десктоп OpenGL
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        #endif
+
 
     // Відключаємо depth test для кращої видимості wireframe
     glDisable(GL_DEPTH_TEST);
@@ -138,7 +149,15 @@ void ChunkCollisionMesh::render() const {
 
     // Повертаємо звичайні налаштування
     glEnable(GL_DEPTH_TEST);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    #ifdef __ANDROID__
+    // Android (OpenGL ES) - wireframe режим треба реалізувати інакше або пропустити
+    // Просто не виконуємо glPolygonMode, бо її немає
+    #else
+        // Десктоп OpenGL
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    #endif
+
 }
 
 int ChunkCollisionMesh::getVertexCount() const {

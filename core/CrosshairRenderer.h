@@ -2,12 +2,20 @@
 // Created by mBlueberry on 09.08.2025.
 //
 
-//
-// Created by mBlueberry on 09.08.2025.
-//
 #pragma once
+
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
 #include <glad/glad.h>
-#include <glm/glm.hpp>
+#endif
+#endif
+
+
+#include "external/glm/glm.hpp"
 
 class CrosshairRenderer {
 public:

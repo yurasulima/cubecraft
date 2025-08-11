@@ -2,7 +2,7 @@
 // Created by mBlueberry on 09.08.2025.
 //
 #pragma once
-#include <glm/glm.hpp>
+#include "external/glm/glm.hpp"
 #include <optional>
 
 struct RaycastHit {

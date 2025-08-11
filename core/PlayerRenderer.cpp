@@ -48,14 +48,31 @@ void PlayerRenderer::render(const glm::vec3& playerPosition, const glm::mat4& vi
     // Рендеримо
     glBindVertexArray(VAO);
 
-    // Рендеримо каркас (wireframe) щоб видно було форму
+
+
+    #ifdef __ANDROID__
+    // Android (OpenGL ES) - wireframe режим треба реалізувати інакше або пропустити
+    // Просто не виконуємо glPolygonMode, бо її немає
+    #else
+        // Десктоп OpenGL
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    #endif
+
+
     glLineWidth(2.0f);
 
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
     // Повертаємо нормальний режим рендерингу
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    #ifdef __ANDROID__
+    // Android (OpenGL ES) - wireframe режим треба реалізувати інакше або пропустити
+    // Просто не виконуємо glPolygonMode, бо її немає
+    #else
+        // Десктоп OpenGL
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    #endif
+
 
     glBindVertexArray(0);
 }

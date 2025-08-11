@@ -4,8 +4,8 @@
 // Camera.h
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "external/glm/glm.hpp"
+#include "external/glm/gtc/matrix_transform.hpp"
 
 class Camera {
 public:

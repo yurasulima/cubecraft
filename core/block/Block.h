@@ -3,7 +3,7 @@
 //
 #pragma once
 #include <string>
-#include <glm/vec3.hpp>
+#include "external/glm/vec3.hpp"
 #include "TextureIndex.h"
 #include "Renderer.h"
 

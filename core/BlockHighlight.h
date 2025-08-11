@@ -2,9 +2,20 @@
 // Created by mBlueberry on 09.08.2025.
 //
 #pragma once
-#include <glm/glm.hpp>
+#include "external/glm/glm.hpp"
 #include <optional>
+
+
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
 #include <glad/glad.h>
+#endif
+#endif
+
 
 struct RaycastHit;
 

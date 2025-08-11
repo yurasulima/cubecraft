@@ -1,13 +1,15 @@
 #include "UIManager.h"
 #include <iostream>
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#endif
 
 #include "external/glm/glm.hpp"
 #include "external/glm/gtc/matrix_transform.hpp"
 #include "external/glm/gtc/type_ptr.hpp"
-
-// Простий вертексний шейдер для UI
 
 
 UIManager::UIManager() 

@@ -28,3 +28,10 @@ void Chunk::setBlock(int x, int y, int z, BlockType type) {
         }
     blocks[index(x, y, z)] = type;
 }
+
+bool Chunk::isEmpty() const {
+    for (const auto& block : blocks) {
+        if (block != BlockType::Air) return false;
+    }
+    return true;
+}

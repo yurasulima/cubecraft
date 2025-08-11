@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include "external/glm/glm.hpp"
 #include "Camera.h"
 #include "PlayerRenderer.h"
 
@@ -14,7 +14,6 @@ public:
     void processMouseMovement(float xoffset, float yoffset);
     void render(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix);
 
-    // Getters
     Camera& getCamera() { return camera; }
     const glm::vec3& getPosition() const { return position; }
     bool shouldRenderPlayer() const { return renderPlayer; }
@@ -24,11 +23,6 @@ private:
     Camera camera;
     PlayerRenderer playerRenderer;
     glm::vec3 position;
-
-    // Movement speed
-    float moveSpeed = 5.0f;
-    float mouseSensitivity = 0.1f;
-
-
+    float moveSpeed = 15.0f;
     bool renderPlayer = false;
 };

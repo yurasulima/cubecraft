@@ -4,7 +4,7 @@
 #include "CrosshairRenderer.h"
 #include <iostream>
 #include <vector>
-#include <glm/ext/matrix_clip_space.hpp>
+#include "external/glm/ext/matrix_clip_space.hpp"
 
 const char* vertexShaderSource = R"(
 #version 330 core

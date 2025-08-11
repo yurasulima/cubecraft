@@ -3,24 +3,21 @@
 //
 
 #pragma once
-#include <glm/glm.hpp>
+#include "external/glm/glm.hpp"
 #include <vector>
 
-// Структура для AABB (прямокутна коробка)
 struct AABB {
-    glm::vec3 min;  // Мінімальний кут (лівий-нижній-задній)
-    glm::vec3 max;  // Максимальний кут (правий-верхній-передній)
+    glm::vec3 min;
+    glm::vec3 max;
 
     AABB() = default;
     AABB(const glm::vec3& min, const glm::vec3& max) : min(min), max(max) {}
 
-    // Створити AABB з позиції та розміру
     static AABB fromPositionSize(const glm::vec3& position, const glm::vec3& size) {
         glm::vec3 halfSize = size * 0.5f;
         return AABB(position - halfSize, position + halfSize);
     }
 
-    // Отримати центр AABB
     glm::vec3 getCenter() const {
         return (min + max) * 0.5f;
     }

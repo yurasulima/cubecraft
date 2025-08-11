@@ -4,7 +4,16 @@
 
 #include "MeshBlock.h"
 #include <iostream>
+
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
 #include <glad/glad.h>
+#endif
+#endif
 
 MeshBlock::MeshBlock(const std::vector<float> &vertices,
                      const std::vector<unsigned int> &indices,

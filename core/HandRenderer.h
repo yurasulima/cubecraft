@@ -9,14 +9,23 @@
 #pragma once
 
 
-#include "glad/glad.h"
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
+#include <glad/glad.h>
+#endif
+#endif
+
+#include "external/glm/glm.hpp"
+#include "external/glm/gtc/matrix_transform.hpp"
 #include <memory>
 #include <string>
 
 #include "MeshBlock.h"
-#include "block/BlockType.h" // Припускаю, що є enum BlockType
+#include "block/BlockType.h"
 
 class HandRenderer {
 private:

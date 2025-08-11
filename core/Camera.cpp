@@ -3,8 +3,8 @@
 //
 // Camera.cpp
 #include "Camera.h"
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/constants.hpp>
+#include "external/glm/gtc/matrix_transform.hpp"
+#include "external/glm/gtc/constants.hpp"
 
 Camera::Camera() {
     updateCameraVectors();
