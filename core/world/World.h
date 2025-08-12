@@ -7,6 +7,12 @@
 #include "block/BlockType.h"
 #include "external/glm/vec3.hpp"
 
+enum class BiomeType {
+    Plains = 0,
+    Desert = 1,
+    Tundra = 2
+};
+
 struct ChunkPos {
     int x, z;
 
@@ -27,11 +33,17 @@ namespace std {
 
 class World {
 public:
+    World();
+
     BlockType getBlock(int x, int y, int z) const;
     void setBlock(int x, int y, int z, BlockType type);
     std::unordered_map<ChunkPos, Chunk> chunks;
+    int worldSeed;
+
     void generateFlatWorld();
 
+    void generateBiomeBlocks(int wx, int i, int wz, int surface_height, BiomeType biome);
+    BiomeType getBiome(int x, int z);
     void generateChunk(const ChunkPos &pos);
     bool updatePlayerPosition(const glm::vec3& playerPos);
 

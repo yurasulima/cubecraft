@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.22.1)
+cmake_minimum_required(VERSION 3.31)
 
 
 project("cubecraft")
 
+set(CMAKE_CXX_STANDARD 26)
 
 add_library(cubecraft SHARED
         android_main.cpp
@@ -74,3 +75,37 @@ target_link_libraries(cubecraft
         log)
 
 
+# Визначаємо шляхи
+set(SHARED_ASSETS_DIR "${CMAKE_SOURCE_DIR}/../../../../../assets")
+set(ANDROID_ASSETS_DIR "${CMAKE_SOURCE_DIR}/../assets")
+
+# Перевіряємо чи існує папка зі спільними assets
+if(EXISTS ${SHARED_ASSETS_DIR})
+    message(STATUS "Found shared assets at: ${SHARED_ASSETS_DIR}")
+
+    # Копіюємо assets при кожному build
+    add_custom_command(
+            TARGET cubecraft POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E remove_directory ${ANDROID_ASSETS_DIR}
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${SHARED_ASSETS_DIR} ${ANDROID_ASSETS_DIR}
+            COMMENT "Copying shared assets to Android assets folder"
+            VERBATIM
+    )
+
+    # Альтернативний варіант - копіювати тільки якщо змінились
+    # add_custom_command(
+    #     OUTPUT ${ANDROID_ASSETS_DIR}/timestamp
+    #     COMMAND ${CMAKE_COMMAND} -E copy_directory ${SHARED_ASSETS_DIR} ${ANDROID_ASSETS_DIR}
+    #     COMMAND ${CMAKE_COMMAND} -E touch ${ANDROID_ASSETS_DIR}/timestamp
+    #     DEPENDS ${SHARED_ASSETS_DIR}
+    #     COMMENT "Syncing assets if changed"
+    # )
+    # add_custom_target(sync_assets DEPENDS ${ANDROID_ASSETS_DIR}/timestamp)
+    # add_dependencies(cubecraft sync_assets)
+
+else()
+    message(WARNING "Shared assets directory not found at: ${SHARED_ASSETS_DIR}")
+endif()
+
+# Додати макрос для вашого коду щоб знати що це Android
+target_compile_definitions(cubecraft PRIVATE ANDROID_BUILD)

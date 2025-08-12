@@ -15,7 +15,7 @@ bool Core::init() {
     auto inited = renderer.init();
 
 
-    if (!player.init(glm::vec3(0.0f, 10.0f, 0.0f))) {
+    if (!player.init(glm::vec3(0.0f, 30.0f, 0.0f))) {
         // Стартова позиція високо над землею
         Logger::error("Failed to initialize player");
         return false;
@@ -32,6 +32,57 @@ void Core::resize(int w, int h) {
 }
 
 void Core::tick() {
+    glm::vec3 playerPos = getPlayer().getPosition();
+
+    // Генеруємо чанк на поточній позиції гравця
+    if (getWorld().updatePlayerPosition(playerPos)) {
+        getWorldRenderer().updateChunkAndNeighbors(playerPos.x, playerPos.y, playerPos.z);
+    }
+
+    // Генеруємо чанки навколо гравця (8 сусідніх чанків)
+    // Розмір чанка припускаємо 16x16
+    const float CHUNK_SIZE = 16.0f;
+
+    // Чанк справа
+    if (getWorld().updatePlayerPosition(playerPos + glm::vec3{CHUNK_SIZE, 0.0f, 0.0f})) {
+        getWorldRenderer().updateChunkAndNeighbors(playerPos.x + CHUNK_SIZE, playerPos.y, playerPos.z);
+    }
+
+    // Чанк зліва
+    if (getWorld().updatePlayerPosition(playerPos + glm::vec3{-CHUNK_SIZE, 0.0f, 0.0f})) {
+        getWorldRenderer().updateChunkAndNeighbors(playerPos.x - CHUNK_SIZE, playerPos.y, playerPos.z);
+    }
+
+    // Чанк вперед
+    if (getWorld().updatePlayerPosition(playerPos + glm::vec3{0.0f, 0.0f, CHUNK_SIZE})) {
+        getWorldRenderer().updateChunkAndNeighbors(playerPos.x, playerPos.y, playerPos.z + CHUNK_SIZE);
+    }
+
+    // Чанк назад
+    if (getWorld().updatePlayerPosition(playerPos + glm::vec3{0.0f, 0.0f, -CHUNK_SIZE})) {
+        getWorldRenderer().updateChunkAndNeighbors(playerPos.x, playerPos.y, playerPos.z - CHUNK_SIZE);
+    }
+
+    // Діагональні чанки
+    // Правий-передній
+    if (getWorld().updatePlayerPosition(playerPos + glm::vec3{CHUNK_SIZE, 0.0f, CHUNK_SIZE})) {
+        getWorldRenderer().updateChunkAndNeighbors(playerPos.x + CHUNK_SIZE, playerPos.y, playerPos.z + CHUNK_SIZE);
+    }
+
+    // Лівий-передній
+    if (getWorld().updatePlayerPosition(playerPos + glm::vec3{-CHUNK_SIZE, 0.0f, CHUNK_SIZE})) {
+        getWorldRenderer().updateChunkAndNeighbors(playerPos.x - CHUNK_SIZE, playerPos.y, playerPos.z + CHUNK_SIZE);
+    }
+
+    // Правий-задній
+    if (getWorld().updatePlayerPosition(playerPos + glm::vec3{CHUNK_SIZE, 0.0f, -CHUNK_SIZE})) {
+        getWorldRenderer().updateChunkAndNeighbors(playerPos.x + CHUNK_SIZE, playerPos.y, playerPos.z - CHUNK_SIZE);
+    }
+
+    // Лівий-задній
+    if (getWorld().updatePlayerPosition(playerPos + glm::vec3{-CHUNK_SIZE, 0.0f, -CHUNK_SIZE})) {
+        getWorldRenderer().updateChunkAndNeighbors(playerPos.x - CHUNK_SIZE, playerPos.y, playerPos.z - CHUNK_SIZE);
+    }
 }
 
 void Core::render() {
@@ -40,7 +91,6 @@ void Core::render() {
     auto projection = getCamera().getProjectionMatrix(width, height);
     renderer.render(model, view, projection);
     player.render(view, projection);
-
 }
 
 
@@ -49,11 +99,27 @@ void Core::render() {
 void Core::initAvailableBlocks() {
     // Додаємо блоки, які можна будувати (виключаємо Air)
     availableBlocks = {
+
         BlockType::Dirt,
         BlockType::Bedrock,
         BlockType::Mud,
         BlockType::Wood,
-        BlockType::Stone
+        BlockType::Stone,
+        BlockType::Andesite,
+        BlockType::BlueIce,
+        BlockType::Brick,
+        BlockType::DiamondBlock,
+        BlockType::DiamondOre,
+        BlockType::LapisBlock,
+        BlockType::PlanksAcacia,
+        BlockType::PlanksOak,
+        BlockType::TntSide,
+        BlockType::CakeTop,
+        BlockType::ConcreteOrange,
+        BlockType::GlassMagenta,
+        BlockType::RedstoneLampOff,
+        BlockType::Snow,
+        BlockType::Sand
     };
 
     selectedBlock = BlockType::Dirt;

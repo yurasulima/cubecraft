@@ -2,7 +2,7 @@
 
 
 Player::Player()
-    : position(0.0f, 10.0f, 0.0f)
+    : position(0.0f, 30.0f, 0.0f)
     , renderPlayer(false)
 {
 }

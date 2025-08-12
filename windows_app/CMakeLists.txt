@@ -3,7 +3,7 @@ project(CubeCraft)
 
 set(CMAKE_CXX_STANDARD 26)
 
-# CMake toolchain file для vcpkg
+
 set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 
 find_package(glfw3 CONFIG REQUIRED)
@@ -64,6 +64,9 @@ add_executable(CubeCraft
         ../core/input/DesktopInputHandler.h
         ../core/input/InputManager.cpp
         ../core/input/InputManager.h
+        ../core/ui/RenderInterface.h
+        ../core/ui/OpenGLRenderer.h
+        ../core/ui/AndroidRenderer.h
 )
 target_include_directories(CubeCraft PUBLIC
         ../core
@@ -78,3 +81,39 @@ target_link_libraries(CubeCraft PRIVATE glad::glad)
 # GLM — лише інклуд
 target_include_directories(CubeCraft PRIVATE ${glm_INCLUDE_DIRS})
 
+# Assets копіювання для Windows
+set(SHARED_ASSETS_DIR "${CMAKE_SOURCE_DIR}/../assets")
+set(WINDOWS_ASSETS_DIR "$<TARGET_FILE_DIR:CubeCraft>/assets")
+
+# Перевіряємо чи існує папка зі спільними assets
+if(EXISTS "${CMAKE_SOURCE_DIR}/../assets")
+    message(STATUS "Found shared assets at: ${CMAKE_SOURCE_DIR}/../assets")
+
+    # Копіюємо assets поруч з .exe файлом
+    add_custom_command(
+            TARGET CubeCraft POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/../assets"
+            "$<TARGET_FILE_DIR:CubeCraft>/assets"
+            COMMENT "Copying shared assets to Windows build directory"
+            VERBATIM
+    )
+
+    message(STATUS "Assets will be copied to: $<TARGET_FILE_DIR:CubeCraft>/assets")
+
+else()
+    message(WARNING "Shared assets directory not found at: ${CMAKE_SOURCE_DIR}/../assets")
+    message(STATUS "Expected path: ${CMAKE_SOURCE_DIR}/../assets")
+endif()
+
+# Додаємо макрос для коду щоб розрізняти Windows build
+target_compile_definitions(CubeCraft PRIVATE WINDOWS_BUILD)
+
+# Debug інформація про шляхи (опціонально)
+message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
+message(STATUS "Assets source path: ${CMAKE_SOURCE_DIR}/../assets")
+message(STATUS "Project structure expected:")
+message(STATUS "  CubeCraft/")
+message(STATUS "  ├── assets/           # shared assets")
+message(STATUS "  ├── windows/          # цей CMakeLists.txt")
+message(STATUS "  └── android_app/      # Android project")

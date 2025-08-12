@@ -72,12 +72,28 @@ void ChunkMesh::uploadToGPU() {
 
 float ChunkMesh::getTextureIndex(BlockType type) {
     switch (type) {
-        case BlockType::Dirt:    return 0.0f;
-        case BlockType::Stone:   return 2.0f;
-        case BlockType::Wood:    return 3.0f;
-        case BlockType::Mud:     return 4.0f;
-        case BlockType::Bedrock: return 5.0f;
-        default:                 return 0.0f;
+        case BlockType::Air:             return 0.0f;
+        case BlockType::Dirt:            return 1.0f;
+        case BlockType::Andesite:        return 2.0f;
+        case BlockType::Stone:           return 3.0f;
+        case BlockType::Wood:            return 4.0f;
+        case BlockType::Mud:             return 5.0f;
+        case BlockType::Bedrock:         return 6.0f;
+        case BlockType::BlueIce:         return 7.0f;
+        case BlockType::Brick:           return 8.0f;
+        case BlockType::CakeTop:         return 9.0f;
+        case BlockType::ConcreteOrange:  return 10.0f;
+        case BlockType::DiamondBlock:    return 11.0f;
+        case BlockType::DiamondOre:      return 12.0f;
+        case BlockType::GlassMagenta:    return 13.0f;
+        case BlockType::LapisBlock:      return 14.0f;
+        case BlockType::PlanksAcacia:    return 15.0f;
+        case BlockType::PlanksOak:       return 16.0f;
+        case BlockType::RedstoneLampOff: return 17.0f;
+        case BlockType::TntSide:         return 18.0f;
+        case BlockType::Sand:            return 19.0f;
+        case BlockType::Snow:            return 20.0f;
+        default:                         return 0.0f;
     }
 }
 

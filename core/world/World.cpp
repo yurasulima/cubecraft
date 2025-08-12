@@ -3,8 +3,22 @@
 //
 #include "World.h"
 
+#include <iostream>
+
 #include "Renderer.h"
 #include "external/FastNoiseLite.h"
+
+
+World::World() {
+    auto now = std::chrono::high_resolution_clock::now();
+    auto duration = now.time_since_epoch();
+    worldSeed = static_cast<int>(duration.count());
+
+
+
+    std::cout << "World seed: " << worldSeed << std::endl;
+}
+
 
 BlockType World::getBlock(int x, int y, int z) const {
     auto [lx, ly, lz] = toLocalPos(x, y, z);
@@ -77,44 +91,47 @@ std::tuple<int, int, int> World::toLocalPos(int x, int y, int z) {
 //         }
 //     }
 // }
+// Енум біомів
+
+
+BiomeType World::getBiome(int x, int z) {
+    FastNoiseLite biomeNoise;
+    biomeNoise.SetSeed(worldSeed);
+    biomeNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    biomeNoise.SetFrequency(0.01f); // Менша частота для великих біомів
+
+    float biomeValue = biomeNoise.GetNoise((float)x, (float)z);
+
+    if (biomeValue < -0.4f) return BiomeType::Desert;
+    else if (biomeValue < -0.1f) return BiomeType::Plains;
+    else return BiomeType::Tundra;
+}
 
 void World::generateFlatWorld() {
-    // Ініціалізуємо генератор шуму
     FastNoiseLite noise;
-    noise.SetSeed(12345);
+    noise.SetSeed(worldSeed);
     noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    noise.SetFrequency(0.02f); // Частота шуму (менше = більші пагорби)
+    noise.SetFrequency(0.02f);
 
     const int WORLD_SIZE = 128;
     const int MIN_HEIGHT = 0;
-    const int MAX_HEIGHT = 40; // Максимальна висота пагорбів
+    const int MAX_HEIGHT = 40;
     const int BEDROCK_LAYERS = 3;
 
     for (int x = -WORLD_SIZE / 2; x < WORLD_SIZE / 2; ++x) {
         for (int z = -WORLD_SIZE / 2; z < WORLD_SIZE / 2; ++z) {
-            // Отримуємо значення шуму (-1 до 1)
-            float noiseValue = noise.GetNoise((float)x, (float)z);
+            BiomeType biome = getBiome(x, z);
 
-            // Перетворюємо в висоту (0 до MAX_HEIGHT)
+            float noiseValue = noise.GetNoise((float)x, (float)z);
             int surfaceHeight = MIN_HEIGHT + (int)((noiseValue + 1.0f) * 0.5f * MAX_HEIGHT);
 
-            // Генеруємо колонку блоків знизу вгору
+
             for (int y = MIN_HEIGHT; y <= surfaceHeight; ++y) {
                 if (y < BEDROCK_LAYERS) {
-                    // Нижні шари - коренна порода
                     setBlock(x, y, z, BlockType::Bedrock);
                 }
-                else if (y == surfaceHeight) {
-                    // Верхній шар - трава (використовуємо Mud як траву)
-                    setBlock(x, y, z, BlockType::Stone);
-                }
-                else if (y >= surfaceHeight - 3) {
-                    // 3 шари під поверхнею - земля
-                    setBlock(x, y, z, BlockType::Dirt);
-                }
                 else {
-                    // Все інше - камінь
-                    setBlock(x, y, z, BlockType::Mud);
+                    generateBiomeBlocks(x, y, z, surfaceHeight, biome);
                 }
             }
         }
@@ -123,7 +140,7 @@ void World::generateFlatWorld() {
 
 void World::generateChunk(const ChunkPos& pos) {
     FastNoiseLite noise;
-    noise.SetSeed(12345);
+    noise.SetSeed(worldSeed);
     noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
     noise.SetFrequency(0.02f);
 
@@ -135,9 +152,11 @@ void World::generateChunk(const ChunkPos& pos) {
     int chunkWorldZ = pos.z * CHUNK_SIZE_Z;
 
     for (int lx = 0; lx < CHUNK_SIZE_X; ++lx) {
-        for (int lz = 0; lz < CHUNK_SIZE_X; ++lz) {
+        for (int lz = 0; lz < CHUNK_SIZE_Z; ++lz) {
             int wx = chunkWorldX + lx;
             int wz = chunkWorldZ + lz;
+
+            BiomeType biome = getBiome(wx, wz);
 
             float noiseValue = noise.GetNoise((float)wx, (float)wz);
             int surfaceHeight = MIN_HEIGHT + (int)((noiseValue + 1.0f) * 0.5f * MAX_HEIGHT);
@@ -146,24 +165,49 @@ void World::generateChunk(const ChunkPos& pos) {
                 if (y < BEDROCK_LAYERS) {
                     setBlock(wx, y, wz, BlockType::Bedrock);
                 }
-                else if (y == surfaceHeight) {
-                    setBlock(wx, y, wz, BlockType::Stone);
-                }
-                else if (y >= surfaceHeight - 3) {
-                    setBlock(wx, y, wz, BlockType::Dirt);
-                }
                 else {
-                    setBlock(wx, y, wz, BlockType::Mud);
+                    generateBiomeBlocks(wx, y, wz, surfaceHeight, biome);
                 }
             }
         }
     }
 }
 
+void World::generateBiomeBlocks(int x, int y, int z, int surfaceHeight, BiomeType biome) {
+    switch (biome) {
+        case BiomeType::Plains:
+            if (y == surfaceHeight) {
+                setBlock(x, y, z, BlockType::Dirt);
+            }
+            else {
+                setBlock(x, y, z, BlockType::Stone);
+            }
+            break;
+
+        case BiomeType::Desert:
+            if (y == surfaceHeight) {
+                setBlock(x, y, z, BlockType::Sand);
+            }
+            else {
+                setBlock(x, y, z, BlockType::Stone);
+            }
+            break;
+
+
+        case BiomeType::Tundra:
+            if (y == surfaceHeight) {
+                setBlock(x, y, z, BlockType::Snow);
+            }
+            else {
+                setBlock(x, y, z, BlockType::Stone);
+            }
+            break;
+    }
+}
+
 bool World::updatePlayerPosition(const glm::vec3& playerPos) {
     ChunkPos currentChunk = toChunkPos((int)playerPos.x, (int)playerPos.z);
 
-    // Якщо чанка немає або він пустий — генеруємо
     if (!chunks.contains(currentChunk) || chunks[currentChunk].isEmpty()) {
         generateChunk(currentChunk);
         return true;

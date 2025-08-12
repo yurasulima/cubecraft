@@ -21,15 +21,15 @@ void Renderer::update() {
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - lastFrameTime);
     deltaTime = duration.count() / 1000000.0f;
     lastFrameTime = currentTime;
-    uiManager.update(deltaTime);
+    // uiManager.update(deltaTime);
 }
 
 void Renderer::handleKeyPress(int key, int scancode, int action, int mods) {
-    uiManager.handleKeyPress(key, scancode, action, mods);
+    // uiManager.handleKeyPress(key, scancode, action, mods);
 }
 
 void Renderer::handleMouseClick(int button, int action, int mods, double xpos, double ypos) {
-    uiManager.handleMouseClick(button, action, mods, xpos, ypos);
+    // uiManager.handleMouseClick(button, action, mods, xpos, ypos);
 }
 bool Renderer::init() {
 

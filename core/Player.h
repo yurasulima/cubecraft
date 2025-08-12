@@ -23,6 +23,6 @@ private:
     Camera camera;
     PlayerRenderer playerRenderer;
     glm::vec3 position;
-    float moveSpeed = 15.0f;
+    float moveSpeed = 5.0f;
     bool renderPlayer = false;
 };

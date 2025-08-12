@@ -313,12 +313,27 @@ void WorldRenderer::cleanup() {
 
 void WorldRenderer::loadTextureArray() {
     std::vector<std::string> texturePaths = {
-        "D:/coding/CubeCraft/windows_app/textures/dirt.png", // 0
-        "D:/coding/CubeCraft/windows_app/textures/andesite.png", // 1
-        "D:/coding/CubeCraft/windows_app/textures/stone.png", // 2
-        "D:/coding/CubeCraft/windows_app/textures/wood.png", // 3
-        "D:/coding/CubeCraft/windows_app/textures/mud.png", // 4
-        "D:/coding/CubeCraft/windows_app/textures/bedrock.png", // 5
+        "assets/textures/air.png",                 // 0 - Air (або порожня текстура)
+ "assets/textures/dirt.png",                // 1 - Dirt
+ "assets/textures/andesite.png",            // 2 - Andesite
+ "assets/textures/stone.png",               // 3 - Stone
+ "assets/textures/wood.png",                // 4 - Wood
+ "assets/textures/mud.png",                 // 5 - Mud
+ "assets/textures/bedrock.png",             // 6 - Bedrock
+ "assets/textures/blue_ice.png",            // 7 - BlueIce
+ "assets/textures/brick.png",               // 8 - Brick
+ "assets/textures/cake_top.png",            // 9 - CakeTop
+ "assets/textures/concrete_orange.png",     // 10 - ConcreteOrange
+ "assets/textures/diamond_block.png",       // 11 - DiamondBlock
+ "assets/textures/diamond_ore.png",         // 12 - DiamondOre
+ "assets/textures/glass_magenta.png",       // 13 - GlassMagenta
+ "assets/textures/lapis_block.png",         // 14 - LapisBlock
+ "assets/textures/planks_acacia.png",       // 15 - PlanksAcacia
+ "assets/textures/planks_oak.png",          // 16 - PlanksOak
+ "assets/textures/redstone_lamp_off.png",   // 17 - RedstoneLampOff
+ "assets/textures/tnt_side.png",            // 18 - TntSide
+ "assets/textures/sand.png",                // 19 - Sand
+ "assets/textures/snow.png"
     };
 
     textureArraySize = (int) texturePaths.size();

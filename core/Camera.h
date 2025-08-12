@@ -49,7 +49,7 @@ private:
 
     float yaw = -90.0f;
     float pitch = 0.0f;
-    float movementSpeed = 15.0f;
+    float movementSpeed = 5.0f;
     float mouseSensitivity = 0.1f;
     void updateCameraVectors();
 };

@@ -7,8 +7,8 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <thread>
-
 #include "../core/Core.h"
+
 static bool g_firstMouse = true;
 static double g_lastMouseX = 400.0;
 static double g_lastMouseY = 300.0;
@@ -17,30 +17,23 @@ UIManager* g_uiManager = nullptr;
 bool g_isPaused = false;
 bool g_showDebugWindow = false;
 
-// ВИПРАВЛЕНИЙ mouse_callback - використовуємо тільки глобальні змінні
+
+
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-    // Ігноруємо рух миші якщо гра на паузі
     if (g_isPaused) {
         return;
     }
-
-    // Якщо це перший рух миші або ми щойно вийшли з паузи
     if (g_firstMouse) {
         g_lastMouseX = xpos;
         g_lastMouseY = ypos;
         g_firstMouse = false;
-        return; // Ігноруємо цей кадр повністю
+        return;
     }
 
-    // Обчислюємо зміщення
     double xoffset = xpos - g_lastMouseX;
-    double yoffset = g_lastMouseY - ypos; // Реверс Y координату
-
-    // Оновлюємо останню позицію
+    double yoffset = g_lastMouseY - ypos;
     g_lastMouseX = xpos;
     g_lastMouseY = ypos;
-
-    // Передаємо рух до гравця
     Core* core = reinterpret_cast<Core*>(glfwGetWindowUserPointer(window));
     if (core) {
         core->getPlayer().processMouseMovement((float)xoffset, (float)yoffset);
@@ -52,7 +45,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (g_uiManager) {
         bool wasPausedBefore = g_isPaused;
 
-        g_uiManager->handleKeyPress(key, scancode, action, mods);
+        // g_uiManager->handleKeyPress(key, scancode, action, mods);
         g_isPaused = g_uiManager->getIsPaused();
         g_showDebugWindow = g_uiManager->getShowDebugWindow();
 
@@ -114,7 +107,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     if (g_uiManager) {
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
-        g_uiManager->handleMouseClick(button, action, mods, xpos, ypos);
+        // g_uiManager->handleMouseClick(button, action, mods, xpos, ypos);
     }
 }
 
@@ -219,10 +212,10 @@ int main() {
     }
     UIManager uiManager;
     g_uiManager = &uiManager;
-    if (!uiManager.init(800, 600)) {
-        std::cerr << "Failed to initialize UI Manager\n";
-        return -1;
-    }
+    // if (!uiManager.init()) {
+    //     std::cerr << "Failed to initialize UI Manager\n";
+    //     return -1;
+    // }
 
     core.resize(800, 600);
     glfwSetWindowUserPointer(window, &core);
